@@ -142,3 +142,58 @@
 🔍 PROBE: "Am I making sense so far?"
    └─ Listen for: speed, enthusiasm, hesitation
 ```
+
+---
+
+## XI. MANIPULATION PLAYBOOK
+
+### A. Detection (Are THEY Manipulating You?)
+| Tactic | Signs | Counter |
+|--------|-------|---------|
+| **Time Pressure** | "I need an answer now" | "Important decisions deserve time" |
+| **False Authority** | "My friend who's an expert says..." | Ask for specifics, verify claims |
+| **Guilt Tripping** | "After all the time I've spent..." | Stay neutral, don't apologize |
+| **Flattery** | Excessive compliments before ask | Acknowledge, but stay on track |
+| **Playing Dumb** | "I don't understand" repeatedly | Simplify once, then call it out gently |
+
+### B. Ethical Influence Techniques (For Agent Use)
+| Technique | Example | When to Use |
+|-----------|---------|-------------|
+| **Priming** | "Most successful companies..." | Early in pitch - sets expectation |
+| **Identity Agreement** | "You seem like someone who values..." | After rapport - locks them into identity |
+| **Scarcity** | "We have 2 spots left" | Only if TRUE |
+| **Social Proof** | "Companies like yours typically..." | When they're skeptical |
+| **Reciprocity** | Give value first (free audit) | Before making the ask |
+| **Commitment/Consistency** | "You mentioned X was important..." | When closing - they can't contradict themselves |
+
+---
+
+## XII. HISTORICAL INTEL
+
+### Pre-Call Data to Load:
+| Data Point | Source | Use |
+|------------|--------|-----|
+| **Previous Call Notes** | CRM | "Last time you mentioned budget..." |
+| **Email Exchanges** | CRM | "I saw your email about timeline..." |
+| **Company News** | LinkedIn/Google | "Congrats on the acquisition..." |
+| **Personal Events** | Social Media | "How was the wedding?" (if public) |
+| **Past Objections** | Call History | Prepare rebuttals for known concerns |
+| **Decision Makers** | Org Chart | "Will Sarah need to be on the next call?" |
+
+### Callback Hooks (Plant Seeds for Future):
+| Seed to Plant | Why |
+|---------------|-----|
+| Personal question | Next call: "How was the trip to Italy?" |
+| Promise to send info | Next call: "Did you get the PDF?" |
+| Reference their goal | Next call: "You mentioned wanting to hit $1M..." |
+
+### HUD Display:
+```
+📜 HISTORY:
+   • Dec 12: Sent proposal, asked about integration
+   • Nov 20: "Need budget approval first"
+   • Callback: Ask about daughter's college
+
+⚠️ KNOWN OBJECTION: "Integration concerns"
+   └─ Rebuttal: "We have 15 integrations ready..."
+```
