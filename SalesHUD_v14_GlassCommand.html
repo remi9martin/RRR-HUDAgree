@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD v14 - GLASS COMMAND</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            /* Glass Variables */
+            --glass-bg: rgba(15, 20, 30, 0.45);
+            --glass-border: rgba(100, 200, 255, 0.15);
+            --glass-shine: rgba(255, 255, 255, 0.05);
+            --backdrop-blur: 15px;
+
+            /* Neon Accents */
+            --neon-teal: #00f3ff;
+            --neon-orange: #ff9900;
+            --neon-rose: #ff0055;
+            --neon-green: #00ff9d;
+
+            /* Text */
+            --text-bright: #ffffff;
+            --text-dim: #8899aa;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+            border-radius: 2px;
+        }
+
+        body {
+            background-color: #050505;
+            color: var(--text-bright);
+            font-family: 'Rajdhani', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Abstract Cyber Background (Not Space) */
+            background-image:
+                linear-gradient(135deg, #0a1018 0%, #150a12 100%);
+            position: relative;
+        }
+
+        /* Animated Grid Background */
+        .cyber-grid {
+            position: absolute;
+            inset: -50%;
+            width: 200%;
+            height: 200%;
+            background-image:
+                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            transform: perspective(500px) rotateX(60deg);
+            animation: gridMove 20s linear infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes gridMove {
+            0% {
+                transform: perspective(500px) rotateX(60deg) translateY(0);
+            }
+
+            100% {
+                transform: perspective(500px) rotateX(60deg) translateY(50px);
+            }
+        }
+
+        /* --- UI FRAMEWORK --- */
+        .glass-deck {
+            width: 98vw;
+            height: 96vh;
+            display: grid;
+            grid-template-columns: 320px 1fr 320px;
+            grid-template-rows: 70px 1fr 180px;
+            gap: 15px;
+            padding: 15px;
+        }
+
+        .g-module {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            backdrop-filter: blur(var(--backdrop-blur));
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            transition: border-color 0.3s;
+        }
+
+        .g-module:hover {
+            border-color: rgba(0, 243, 255, 0.3);
+        }
+
+        /* Glass Header */
+        .g-head {
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.02), transparent);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 8px 12px;
+            font-family: 'JetBrains Mono';
+            font-size: 0.7rem;
+            color: var(--neon-teal);
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .g-head span {
+            text-shadow: 0 0 5px rgba(0, 243, 255, 0.5);
+        }
+
+        .blink {
+            animation: blink 2s infinite;
+            color: var(--neon-rose);
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* --- HEADER ROW --- */
+        .top-row {
+            grid-column: 1 / 4;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 20px;
+        }
+
+        .brand-block {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        .brand-block span {
+            color: var(--neon-teal);
+        }
+
+        .big-conf-strip {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .conf-track {
+            height: 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            display: flex;
+            padding: 2px;
+            overflow: hidden;
+        }
+
+        .conf-cell {
+            flex: 1;
+            margin: 0 1px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        .conf-cell.act {
+            background: var(--neon-teal);
+            box-shadow: 0 0 8px var(--neon-teal);
+        }
+
+        .conf-cell.risk {
+            background: var(--neon-rose);
+            box-shadow: 0 0 8px var(--neon-rose);
+        }
+
+        /* --- VISUALIZERS --- */
+        .vis-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .spectro-glass {
+            height: 40px;
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            opacity: 0.8;
+        }
+
+        .vol-bar {
+            flex: 1;
+            background: var(--neon-teal);
+            opacity: 0.4;
+            border-radius: 2px 2px 0 0;
+        }
+
+        .spark-c {
+            height: 30px;
+            border-bottom: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .spark-path {
+            position: absolute;
+            width: 200%;
+            height: 100%;
+            background: repeating-linear-gradient(90deg, transparent 0, transparent 4px, var(--neon-orange) 5px);
+            opacity: 0.3;
+            animation: scrollL 5s linear infinite;
+        }
+
+        @keyframes scrollL {
+            to {
+                transform: translateX(-50%);
+            }
+        }
+
+        /* --- LEFT COL (DENSE INTEL) --- */
+        .col-left {
+            grid-row: 2 / 4;
+            display: grid;
+            grid-template-rows: 280px 1fr 200px;
+            gap: 10px;
+        }
+
+        .holo-profile {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: radial-gradient(circle at center, rgba(0, 243, 255, 0.05), transparent 70%);
+        }
+
+        .av-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid var(--neon-teal);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+            display: grid;
+            place-items: center;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .prof-grid {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 0.8rem;
+        }
+
+        .pg-l {
+            color: var(--text-dim);
+        }
+
+        .pg-v {
+            text-align: right;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .waterfall-box {
+            font-family: 'JetBrains Mono';
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            padding: 10px;
+            overflow: hidden;
+            opacity: 0.7;
+            mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+        }
+
+        .wf-row {
+            white-space: nowrap;
+            margin-bottom: 2px;
+        }
+
+        /* --- CENTER (MAIN HUD) --- */
+        .col-main {
+            grid-row: 2 / 3;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .gauges-glass {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            padding: 20px;
+            background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.03), transparent);
+        }
+
+        .g-circ {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            border: 1px solid var(--glass-border);
+            position: relative;
+            display: grid;
+            place-items: center;
+        }
+
+        .g-ring-spin {
+            position: absolute;
+            inset: -5px;
+            border-radius: 50%;
+            border: 2px dashed var(--glass-border);
+            border-top-color: var(--neon-teal);
+            animation: spin 10s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .val-big {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .trans-glass {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono';
+            font-size: 0.9rem;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .tr-ln {
+            margin-bottom: 6px;
+            padding-left: 10px;
+            border-left: 2px solid transparent;
+        }
+
+        .tr-me {
+            border-color: var(--neon-teal);
+            color: #fff;
+            background: linear-gradient(90deg, rgba(0, 243, 255, 0.05), transparent);
+        }
+
+        .tr-them {
+            border-color: var(--neon-orange);
+            color: #eee;
+        }
+
+        /* --- RIGHT COL (AMMO) --- */
+        .col-right {
+            grid-row: 2 / 4;
+            display: grid;
+            grid-template-rows: 250px 1fr 120px;
+            gap: 10px;
+        }
+
+        .ammo-matrix {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 4px;
+            padding: 10px;
+        }
+
+        .bullet-g {
+            height: 12px;
+            background: var(--neon-teal);
+            border-radius: 2px;
+            box-shadow: 0 0 5px var(--neon-teal);
+            transition: all 0.3s;
+        }
+
+        .bullet-g.mt {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: none;
+        }
+
+        .map-glass {
+            position: relative;
+            margin: 10px;
+            border: 1px solid var(--glass-border);
+            background: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1h2v2H1V1zm4 0h2v2H5V1zm4 0h2v2H9V1z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+            flex: 1;
+        }
+
+        .map-p {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #fff;
+            top: 50%;
+            left: 10%;
+            transition: left 0.5s;
+        }
+
+        /* --- BOTTOM DECK --- */
+        .bot-deck {
+            grid-column: 2 / 3;
+            grid-row: 3;
+            display: flex;
+            gap: 10px;
+        }
+
+        .prov-card {
+            flex: 2;
+            border: 1px solid var(--neon-rose);
+            background: linear-gradient(90deg, rgba(255, 0, 85, 0.1), transparent);
+            padding: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .prov-txt {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #fff;
+            margin-left: 15px;
+        }
+
+        .dom-card {
+            flex: 1;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .d-bar {
+            height: 10px;
+            display: flex;
+            border-radius: 5px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .db-1 {
+            background: var(--neon-teal);
+            width: 50%;
+        }
+
+        .db-2 {
+            background: var(--neon-orange);
+            width: 50%;
+        }
+
+        .mic-fab {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+            color: var(--neon-teal);
+            font-family: 'Rajdhani';
+            font-weight: 700;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border: 1px solid var(--neon-teal);
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .mic-fab:hover {
+            background: rgba(0, 243, 255, 0.2);
+        }
+
+        .mic-fab.act {
+            background: var(--neon-teal);
+            color: #000;
+            box-shadow: 0 0 20px var(--neon-teal);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="cyber-grid"></div>
+
+    <div class="glass-deck">
+
+        <!-- TOP ROW -->
+        <div class="g-module top-row">
+            <div class="brand-block">VITAL<span>RX</span> GLASS</div>
+
+            <div class="big-conf-strip">
+                <div
+                    style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:4px; color:var(--text-dim);">
+                    <span id="confLabel">CONFIDENCE: 0%</span>
+                    <span class="blink">LIVE ANALYSIS</span>
+                </div>
+                <div class="conf-track" id="confTrack">
+                    <!-- JS Fills -->
+                </div>
+            </div>
+
+            <div style="font-family:'JetBrains Mono'; font-size:1.2rem;" id="timer">00:00</div>
+        </div>
+
+        <!-- LEFT COL -->
+        <div class="col-left">
+            <div class="g-module">
+                <div class="g-head"><span>TARGET_ID</span></div>
+                <div class="holo-profile">
+                    <div class="av-circle">👤</div>
+                    <div class="prof-grid">
+                        <span class="pg-l">NAME</span> <span class="pg-v">Identifying...</span>
+                        <span class="pg-l">ROLE</span> <span class="pg-v">Decision Maker</span>
+                        <span class="pg-l">MINDSET</span> <span class="pg-v" id="msVal"
+                            style="color:var(--neon-orange)">--</span>
+                    </div>
+                </div>
+                <!-- Spectrogram embedded in profile module for high density feel -->
+                <div style="padding:10px;">
+                    <div style="font-size:0.6rem; color:var(--text-dim); margin-bottom:2px;">AUDIO_SPECTRAL_ANALYSIS
+                    </div>
+                    <div class="spectro-glass" id="spectro"></div>
+                </div>
+            </div>
+
+            <div class="g-module" style="background: rgba(0,0,0,0.6);">
+                <div class="g-head"><span>DATA_STREAM</span></div>
+                <div class="waterfall-box" id="binFall"></div>
+            </div>
+
+            <div class="g-module">
+                <div class="g-head"><span>NET_TRAFFIC</span></div>
+                <div style="padding:10px;">
+                    <div class="spark-c">
+                        <div class="spark-path"></div>
+                    </div>
+                    <div class="spark-c" style="margin-top:5px;">
+                        <div class="spark-path" style="animation-duration:3s; opacity:0.5;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER MAIN -->
+        <div class="col-main">
+            <div class="g-module">
+                <div class="gauges-glass">
+                    <div>
+                        <div class="g-circ">
+                            <div class="g-ring-spin"></div>
+                            <div style="text-align:center;">
+                                <div class="val-big" id="engVal">--</div>
+                                <div style="font-size:0.7rem; color:var(--text-dim);">ENGAGEMENT</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="g-circ" style="border-color:rgba(255,153,0,0.3);">
+                            <div class="g-ring-spin"
+                                style="border-top-color:var(--neon-orange); animation-direction:reverse;"></div>
+                            <div style="text-align:center;">
+                                <div class="val-big" id="sentVal" style="font-size:1.8rem;">NEU</div>
+                                <div style="font-size:0.7rem; color:var(--text-dim);">SENTIMENT</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="g-module" style="flex:1;">
+                <div class="g-head"><span>TRANSCRIPT_LOG</span></div>
+                <div class="trans-glass" id="term">
+                    <div style="color:var(--text-dim); text-align:center; padding-top:20px;">[ SYSTEM READY // AWAITING
+                        AUDIO ]</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COL -->
+        <div class="col-right">
+            <div class="g-module">
+                <div class="g-head"><span>TACTICAL_AMMO</span></div>
+                <div class="ammo-matrix" id="ammoGrid"></div>
+                <div style="text-align:center; font-size:0.7rem; padding-bottom:5px; color:var(--text-dim);">ROUNDS
+                    REMAINING: <span id="ammoCount">60</span></div>
+            </div>
+
+            <div class="g-module">
+                <div class="g-head"><span>SALES_TRAJECTORY</span></div>
+                <div class="map-glass">
+                    <div class="map-p" id="mapDot"></div>
+                    <div style="position:absolute; bottom:5px; left:5px; font-size:0.7rem; color:var(--neon-teal);"
+                        id="stLbl">DISCOVERY</div>
+                </div>
+            </div>
+
+            <div class="g-module">
+                <div class="g-head"><span>COACH_SIGNAL</span></div>
+                <div style="padding:15px; display:flex; align-items:center;">
+                    <div
+                        style="width:10px; height:10px; background:var(--neon-green); border-radius:50%; margin-right:10px; box-shadow:0 0 10px var(--neon-green);">
+                    </div>
+                    <div style="font-weight:700;" id="coachText">LISTENING...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM DECK -->
+        <div class="bot-deck">
+            <div class="g-module prov-card">
+                <div style="font-size:2rem;">⚠️</div>
+                <div class="prov-txt" id="provText">PROVOCATION ENGINE READY</div>
+            </div>
+
+            <div class="g-module dom-card">
+                <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:4px;">
+                    <span>AGENT</span> <span>LEAD</span>
+                </div>
+                <div class="d-bar">
+                    <div class="db-1" id="barAg"></div>
+                    <div class="db-2" id="barCl"></div>
+                </div>
+            </div>
+
+            <div class="g-module" style="width:120px;">
+                <button class="mic-fab" id="micBtn" onclick="toggleMic()">INIT<br>HUD</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SCRIPT -->
+    <script>
+        const API_URL = "http://localhost:47293/api/analyze/sales-call";
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let isListening = false;
+        let fullTranscript = "";
+        let sec = 0; let tInt;
+
+        // Init UI
+        const confTrack = document.getElementById('confTrack');
+        for (let i = 0; i < 30; i++) {
+            let c = document.createElement('div');
+            c.className = 'conf-cell';
+            if (i > 24) c.classList.add('risk');
+            confTrack.appendChild(c);
+        }
+
+        const ammoGrid = document.getElementById('ammoGrid');
+        for (let i = 0; i < 60; i++) {
+            let b = document.createElement('div');
+            b.className = 'bullet-g';
+            ammoGrid.appendChild(b);
+        }
+
+        const spectro = document.getElementById('spectro');
+        for (let i = 0; i < 12; i++) {
+            let b = document.createElement('div');
+            b.className = 'vol-bar';
+            b.style.height = (20 + Math.random() * 80) + '%';
+            spectro.appendChild(b);
+        }
+        setInterval(() => {
+            document.querySelectorAll('.vol-bar').forEach(b => {
+                b.style.height = (20 + Math.random() * 80) + '%';
+            });
+        }, 100);
+
+        setInterval(() => {
+            let bf = document.getElementById('binFall');
+            let h = Math.random().toString(36).substring(7).toUpperCase();
+            bf.innerHTML = `<div class="wf-row">PKT_${h} :: STREAM_OK</div>` + bf.innerHTML;
+            if (bf.children.length > 12) bf.lastChild.remove();
+        }, 150);
+
+        function toggleMic() {
+            if (!SpeechRecognition) { alert("Chrome Req"); return; }
+            if (isListening) {
+                isListening = false; recognition.stop(); clearInterval(tInt);
+                document.getElementById('micBtn').classList.remove('act');
+            } else {
+                isListening = true;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.onresult = proc;
+                recognition.onend = () => { if (isListening) recognition.start(); };
+                recognition.start();
+                document.getElementById('micBtn').classList.add('act');
+                tInt = setInterval(() => {
+                    sec++;
+                    let m = Math.floor(sec / 60).toString().padStart(2, '0');
+                    let s = (sec % 60).toString().padStart(2, '0');
+                    document.getElementById('timer').innerText = `${m}:${s}`;
+                }, 1000);
+                if (document.getElementById('term').innerText.includes("SYSTEM READY")) {
+                    document.getElementById('term').innerHTML = "";
+                }
+            }
+        }
+
+        let aw = 0, cw = 0;
+        function proc(e) {
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+                if (e.results[i].isFinal) {
+                    let txt = e.results[i][0].transcript;
+                    fullTranscript += txt + " ";
+
+                    let isMe = txt.length > 40;
+                    if (isMe) aw += txt.split(' ').length; else cw += txt.split(' ').length;
+
+                    let d = document.createElement('div');
+                    d.className = isMe ? 'tr-ln tr-me' : 'tr-ln tr-them';
+                    d.innerText = (isMe ? "YOU: " : "LEAD: ") + txt;
+                    let term = document.getElementById('term');
+                    term.appendChild(d);
+                    term.scrollTop = term.scrollHeight;
+
+                    updateDom();
+                    callBrain();
+                }
+            }
+        }
+
+        function updateDom() {
+            let t = aw + cw; if (t < 1) return;
+            let p = (aw / t) * 100;
+            document.getElementById('barAg').style.width = p + '%';
+            document.getElementById('barCl').style.width = (100 - p) + '%';
+        }
+
+        async function callBrain() {
+            if (fullTranscript.length < 10) return document.getElementById('coachText').innerText = "GATHERING DATA...";
+            try {
+                let r = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ transcript: fullTranscript })
+                });
+                let d = await r.json();
+                if (d.success) render(d);
+            } catch (e) { }
+        }
+
+        function render(d) {
+            if (d.confidence_score) {
+                let p = d.confidence_score;
+                document.getElementById('confLabel').innerText = `CONFIDENCE: ${p}%`;
+                let n = Math.floor((p / 100) * 30);
+                document.querySelectorAll('.conf-cell').forEach((c, i) => {
+                    if (i < n) c.classList.add('act'); else c.classList.remove('act');
+                });
+                // Map
+                document.getElementById('mapDot').style.left = (10 + p * 0.8) + '%';
+                if (p > 80) document.getElementById('stLbl').innerText = "CLOSING";
+                else if (p > 40) document.getElementById('stLbl').innerText = "PITCHING";
+            }
+            if (d.pbd_mindset) document.getElementById('msVal').innerText = d.pbd_mindset.toUpperCase();
+            if (d.health_level) document.getElementById('engVal').innerText = d.health_level;
+
+            if (d.sentiment == 'positive') {
+                document.getElementById('sentVal').innerText = 'POS';
+                document.getElementById('sentVal').style.color = 'var(--neon-teal)';
+            } else if (d.sentiment == 'negative') {
+                document.getElementById('sentVal').innerText = 'NEG';
+                document.getElementById('sentVal').style.color = 'var(--neon-orange)';
+            }
+
+            if (d.ammo_remaining) {
+                document.getElementById('ammoCount').innerText = d.ammo_remaining;
+                let k = d.ammo_remaining;
+                document.querySelectorAll('.bullet-g').forEach((b, i) => {
+                    if (i >= k) b.classList.add('mt');
+                });
+            }
+
+            if (d.coaching_tip) document.getElementById('coachText').innerText = d.coaching_tip.toUpperCase();
+            if (d.smart_prompt) document.getElementById('provText').innerText = d.smart_prompt.toUpperCase();
+        }
+
+    </script>
+
+</body>
+
+</html>

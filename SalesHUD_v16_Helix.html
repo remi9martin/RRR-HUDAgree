@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD v16 - HELIX</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap');
+
+        :root {
+            --neon-cyan: #00f3ff;
+            --neon-blue: #0066ff;
+            --neon-purple: #bd00ff;
+            --glass-surface: rgba(10, 20, 40, 0.4);
+            --glass-border: rgba(0, 243, 255, 0.2);
+            --text-glow: 0 0 10px rgba(0, 243, 255, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            /* Video Call Simulation BG */
+            background: url('https://images.unsplash.com/photo-1543269664-56d93c1b41a6?q=80&w=2070&auto=format&fit=crop') center/cover no-repeat;
+            color: #fff;
+            font-family: 'Rajdhani', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+        }
+
+        .overlay-dim {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            pointer-events: none;
+        }
+
+        /* --- THE CHASSIS --- */
+        .hud-interface {
+            width: 95vw;
+            height: 92vh;
+            display: grid;
+            grid-template-columns: 350px 1fr 350px;
+            grid-template-rows: 80px 1fr 150px;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* --- MODULES --- */
+        .glass-panel {
+            background: var(--glass-surface);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .glass-panel:hover {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.15);
+        }
+
+        .g-header {
+            font-family: 'Orbitron';
+            font-size: 0.7rem;
+            color: var(--neon-cyan);
+            letter-spacing: 2px;
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* --- TOP BAR --- */
+        .top-deck {
+            grid-column: 1 / 4;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand-pill {
+            padding: 10px 20px;
+            border: 1px solid var(--neon-cyan);
+            border-radius: 30px;
+            background: rgba(0, 243, 255, 0.1);
+            font-family: 'Orbitron';
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
+
+        .conf-strip-hex {
+            flex: 1;
+            max-width: 600px;
+            margin: 0 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .hex-bit {
+            flex: 1;
+            height: 12px;
+            background: #222;
+            transform: skewX(-20deg);
+            transition: all 0.3s;
+        }
+
+        .hex-bit.on {
+            background: var(--neon-cyan);
+            box-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        .hex-bit.risk {
+            background: var(--neon-purple);
+            box-shadow: 0 0 10px var(--neon-purple);
+        }
+
+        /* --- LEFT COL (THE HOOK) --- */
+        .col-left {
+            grid-row: 2 / 4;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .hook-card {
+            background: linear-gradient(135deg, rgba(0, 243, 255, 0.05), transparent);
+            border: 1px solid var(--neon-cyan);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hook-card::before {
+            content: 'THE HOOK';
+            position: absolute;
+            top: 5px;
+            left: 10px;
+            font-size: 0.6rem;
+            color: var(--neon-cyan);
+            font-family: 'Orbitron';
+        }
+
+        .hook-msg {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            margin-top: 15px;
+        }
+
+        .prof-stats {
+            margin-top: auto;
+            padding: 15px;
+        }
+
+        .stat-r {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+            padding-bottom: 2px;
+        }
+
+        .sv {
+            color: var(--neon-cyan);
+            font-weight: 700;
+        }
+
+        /* --- CENTER (HELIX) --- */
+        .col-center {
+            grid-row: 2 / 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* 3D HELIX CONTAINER */
+        .helix-container {
+            width: 100px;
+            height: 350px;
+            position: relative;
+            transform-style: preserve-3d;
+        }
+
+        .helix-strand {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 0;
+            height: 100%;
+        }
+
+        .dna-dot {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            left: -6px;
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .helix-label {
+            position: absolute;
+            right: -120px;
+            top: 50%;
+            transform: translateY(-50%);
+            text-align: left;
+            width: 100px;
+        }
+
+        .eng-score {
+            font-size: 3rem;
+            font-family: 'Orbitron';
+            font-weight: 900;
+            color: var(--neon-cyan);
+        }
+
+        .eng-lbl {
+            font-size: 0.8rem;
+            color: #aaa;
+            letter-spacing: 2px;
+        }
+
+        /* Floating Waveform under Helix */
+        .wave-plate {
+            width: 300px;
+            height: 80px;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+        }
+
+        .w-bar {
+            width: 3px;
+            background: var(--neon-purple);
+            border-radius: 2px;
+        }
+
+        /* --- RIGHT COL (TACTICS) --- */
+        .col-right {
+            grid-row: 2 / 4;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .ammo-crate {
+            padding: 15px;
+        }
+
+        .ammo-icons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .bullet-icon {
+            width: 8px;
+            height: 20px;
+            background: var(--neon-cyan);
+            clip-path: polygon(50% 0, 100% 20%, 100% 100%, 0 100%, 0 20%);
+        }
+
+        .bullet-icon.mt {
+            background: #333;
+            opacity: 0.5;
+        }
+
+        .transcript-glass {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+        }
+
+        .tr-me {
+            color: var(--neon-cyan);
+            margin-bottom: 8px;
+        }
+
+        .tr-them {
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        /* --- BOTTOM --- */
+        .bottom-shelf {
+            grid-column: 2 / 3;
+            grid-row: 3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .coach-pill {
+            background: linear-gradient(90deg, rgba(189, 0, 255, 0.2), transparent);
+            border: 1px solid var(--neon-purple);
+            padding: 10px 30px;
+            border-radius: 40px;
+            text-align: center;
+            color: #fff;
+            min-width: 300px;
+        }
+
+        .mic-orb {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--neon-cyan);
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: var(--neon-cyan);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+            transition: transform 0.2s;
+        }
+
+        .mic-orb:hover {
+            transform: scale(1.1);
+            background: rgba(0, 243, 255, 0.2);
+        }
+
+        .mic-orb.active {
+            border-color: var(--neon-purple);
+            color: var(--neon-purple);
+            box-shadow: 0 0 30px var(--neon-purple);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(189, 0, 255, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 20px rgba(189, 0, 255, 0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="overlay-dim"></div>
+
+    <div class="hud-interface">
+
+        <!-- TOP -->
+        <div class="glass-panel top-deck" style="background: rgba(10,20,40,0.6);">
+            <div style="padding: 0 20px; font-family:'Orbitron'; font-weight:700;">VITAL<span
+                    style="color:var(--neon-cyan)">RX</span></div>
+
+            <div class="conf-strip-hex" id="confStrip">
+                <!-- JS Fills -->
+            </div>
+
+            <div style="padding: 0 20px;">
+                <div class="brand-pill" id="timer">00:00</div>
+            </div>
+        </div>
+
+        <!-- LEFT -->
+        <div class="glass-panel col-left">
+            <div class="hook-card">
+                <div class="hook-msg" id="hookText">"Mention the recent tech merger..."</div>
+            </div>
+
+            <div class="glass-panel" style="flex:1;">
+                <div class="g-header"><span>LEAD INTELLIGENCE</span></div>
+                <div class="prof-stats">
+                    <div class="stat-r"><span>NAME</span> <span class="sv">John Doe</span></div>
+                    <div class="stat-r"><span>ROLE</span> <span class="sv">CTO</span></div>
+                    <div class="stat-r"><span>MINDSET</span> <span class="sv" id="pbdVal"
+                            style="color:var(--neon-purple)">--</span></div>
+                    <br>
+                    <div style="font-size:0.7rem; color:#aaa; margin-bottom:5px;">SOCIAL SIGNAL</div>
+                    <div style="font-size:0.8rem; font-style:italic;">"Big moves coming in Q4 infrastructure..."</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER (HELIX) -->
+        <div class="col-center">
+
+            <!-- THE DNA HELIX -->
+            <div style="display:flex; align-items:center;">
+                <div class="helix-container" id="helix">
+                    <!-- JS Fills dots -->
+                </div>
+                <div class="helix-label">
+                    <div class="eng-score" id="engScore">92</div>
+                    <div class="eng-lbl">ATTENTION<br>LEVEL</div>
+                </div>
+            </div>
+
+            <!-- WAVEFORM -->
+            <div class="wave-plate" id="wavePlate">
+                <!-- JS Fills bars -->
+            </div>
+
+        </div>
+
+        <!-- RIGHT -->
+        <div class="glass-panel col-right">
+            <div class="ammo-crate">
+                <div class="g-header" style="padding-left:0;"><span>TACTICAL INVENTORY</span> <span
+                        id="ammoCnt">30/30</span></div>
+                <div class="ammo-icons" id="ammoRack"></div>
+            </div>
+
+            <div class="glass-panel" style="flex:1; background:rgba(0,0,0,0.5);">
+                <div class="transcript-glass" id="term">
+                    <div style="text-align:center; color:#666;">-- AWAITING AUDIO --</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM -->
+        <div class="bottom-shelf">
+            <div class="coach-pill">
+                <div style="font-size:0.6rem; color:var(--neon-purple); font-weight:700;">PRECOGV COACH</div>
+                <div style="font-size:1.1rem; font-weight:700;" id="coachText">LISTEN ACTIVELY</div>
+            </div>
+
+            <div class="mic-orb" id="micBtn" onclick="toggleMic()">🎙️</div>
+        </div>
+
+    </div>
+
+    <!-- SCRIPT -->
+    <script>
+        const API_URL = "http://localhost:47293/api/analyze/sales-call";
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let isListening = false;
+        let fullTranscript = "";
+        let sec = 0; let tInt;
+
+        // --- INIT HELIX ---
+        const helix = document.getElementById('helix');
+        const strands = 2;
+        const dotsPerStrand = 20;
+
+        for (let s = 0; s < strands; s++) {
+            let strandDiv = document.createElement('div');
+            strandDiv.className = 'helix-strand';
+            for (let i = 0; i < dotsPerStrand; i++) {
+                let dot = document.createElement('div');
+                dot.className = 'dna-dot';
+                dot.style.background = s === 0 ? 'var(--neon-cyan)' : 'var(--neon-purple)';
+                dot.style.top = (i * (350 / dotsPerStrand)) + 'px';
+
+                // Animation loop embedded in style for simplicity or JS
+                // Let's use JS for the 3D rotation logic
+                dot.dataset.y = i * (350 / dotsPerStrand);
+                dot.dataset.offset = (i * 0.5) + (s * Math.PI); // Phase shift
+                strandDiv.appendChild(dot);
+            }
+            helix.appendChild(strandDiv);
+        }
+
+        let time = 0;
+        function animateHelix() {
+            time += 0.05;
+            document.querySelectorAll('.dna-dot').forEach(dot => {
+                let y = parseFloat(dot.dataset.y);
+                let off = parseFloat(dot.dataset.offset);
+                let angle = time + off;
+
+                // key: x = sin(angle) * width
+                let x = Math.sin(angle) * 40;
+                let z = Math.cos(angle) * 40; // Depth
+                let scale = (z + 100) / 100 * 0.8; // Perspective scale
+                let alpha = (z + 50) / 100;
+
+                dot.style.transform = `translateX(${x}px) scale(${scale})`;
+                dot.style.opacity = Math.max(0.2, alpha);
+                dot.style.zIndex = Math.floor(z);
+            });
+            requestAnimationFrame(animateHelix);
+        }
+        animateHelix();
+
+        // --- INIT WAVEFORM ---
+        const wp = document.getElementById('wavePlate');
+        for (let i = 0; i < 40; i++) {
+            let b = document.createElement('div');
+            b.className = 'w-bar';
+            wp.appendChild(b);
+        }
+        setInterval(() => {
+            document.querySelectorAll('.w-bar').forEach(b => {
+                let h = 10 + Math.random() * 40;
+                b.style.height = h + 'px';
+                b.style.opacity = 0.3 + Math.random() * 0.7;
+            });
+        }, 100);
+
+        // --- INIT CONFIDENCE ---
+        const cs = document.getElementById('confStrip');
+        for (let i = 0; i < 30; i++) {
+            let h = document.createElement('div');
+            h.className = 'hex-bit';
+            cs.appendChild(h);
+        }
+
+        // --- INIT AMMO ---
+        const ar = document.getElementById('ammoRack');
+        for (let i = 0; i < 30; i++) {
+            let b = document.createElement('div');
+            b.className = 'bullet-icon';
+            ar.appendChild(b);
+        }
+
+        // --- LOGIC ---
+        function toggleMic() {
+            if (!SpeechRecognition) { alert("Chrome Req"); return; }
+            if (isListening) {
+                isListening = false; recognition.stop(); clearInterval(tInt);
+                document.getElementById('micBtn').classList.remove('active');
+            } else {
+                isListening = true;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.onresult = proc;
+                recognition.onend = () => { if (isListening) recognition.start(); };
+                recognition.start();
+                document.getElementById('micBtn').classList.add('active');
+
+                if (document.getElementById('term').innerText.includes("AWAITING")) {
+                    document.getElementById('term').innerHTML = "";
+                }
+
+                tInt = setInterval(() => {
+                    sec++;
+                    let m = Math.floor(sec / 60).toString().padStart(2, '0');
+                    let s = (sec % 60).toString().padStart(2, '0');
+                    document.getElementById('timer').innerText = `${m}:${s}`;
+                }, 1000);
+            }
+        }
+
+        async function proc(e) {
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+                if (e.results[i].isFinal) {
+                    let txt = e.results[i][0].transcript;
+                    fullTranscript += txt + " ";
+
+                    let d = document.createElement('div');
+                    let isMe = txt.split(' ').length > 5; // sim
+                    d.className = isMe ? 'tr-me' : 'tr-them';
+                    d.innerText = (isMe ? "YOU: " : "LEAD: ") + txt;
+                    let t = document.getElementById('term');
+                    t.appendChild(d);
+                    t.scrollTop = t.scrollHeight;
+
+                    try {
+                        let r = await fetch(API_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ transcript: fullTranscript })
+                        });
+                        let data = await r.json();
+                        if (data.success) render(data);
+                    } catch (e) { }
+                }
+            }
+        }
+
+        function render(d) {
+            if (d.confidence_score) {
+                let p = d.confidence_score;
+                let n = Math.floor((p / 100) * 30);
+                document.querySelectorAll('.hex-bit').forEach((b, i) => {
+                    if (i < n) {
+                        b.classList.add('on');
+                        if (i > 22) b.classList.add('risk'); else b.classList.remove('risk');
+                    } else {
+                        b.classList.remove('on'); b.classList.remove('risk');
+                    }
+                });
+            }
+            if (d.health_level) document.getElementById('engScore').innerText = d.health_level == "High" ? 95 : (d.health_level == "Medium" ? 75 : 40);
+            if (d.smart_prompt) document.getElementById('hookText').innerText = `"${d.smart_prompt}"`;
+            if (d.coaching_tip) document.getElementById('coachText').innerText = d.coaching_tip.toUpperCase();
+            if (d.pbd_mindset) document.getElementById('pbdVal').innerText = d.pbd_mindset.toUpperCase();
+
+            if (d.ammo_remaining) {
+                document.getElementById('ammoCnt').innerText = `${d.ammo_remaining}/30`;
+                document.querySelectorAll('.bullet-icon').forEach((b, i) => {
+                    if (i >= d.ammo_remaining) b.classList.add('mt');
+                });
+            }
+        }
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD - v6 Sprint Release (Gunmetal)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
+
+        :root {
+            --hud-primary: #9ca3af;
+            --hud-secondary: #d1d5db;
+            --hud-accent: #ffffff;
+            --hud-success: #34d399;
+            --hud-warning: #fbbf24;
+            --hud-danger: #ef4444;
+            --hud-info: #60a5fa;
+            --gunmetal: #2a2d32;
+            --gunmetal-dark: #111827;
+            --glass-bg: rgba(31, 41, 55, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--gunmetal-dark);
+            color: var(--hud-secondary);
+            min-height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Background Effects */
+        .bg-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, #1f2937 0%, #000000 100%);
+            z-index: -2;
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+        }
+
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 40%, #000 100%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Main Containers */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            position: absolute;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .panel-header {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--hud-primary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Top HUD */
+        .top-deck {
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 40px;
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            border-top: 2px solid var(--hud-info);
+        }
+
+        .stat-group {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: #6b7280;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            color: var(--hud-accent);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        .recording-indicator {
+            width: 12px;
+            height: 12px;
+            background: #374151;
+            border-radius: 50%;
+            box-shadow: 0 0 0 2px #374151;
+            transition: all 0.3s;
+        }
+
+        .recording-indicator.active {
+            background: var(--hud-danger);
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+            animation: pulse-red 2s infinite;
+        }
+
+        /* Left Panel - Profile */
+        .left-deck {
+            top: 100px;
+            left: 20px;
+            width: 260px;
+            bottom: 100px;
+            padding: 16px;
+            overflow-y: auto;
+            border-left: 2px solid var(--hud-info);
+        }
+
+        .profile-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .avatar {
+            width: 70px;
+            height: 70px;
+            background: #374151;
+            border-radius: 50%;
+            margin-bottom: 10px;
+            display: grid;
+            place-items: center;
+            font-size: 2rem;
+            border: 2px solid var(--hud-info);
+            box-shadow: 0 0 20px rgba(96, 165, 250, 0.2);
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            font-size: 0.85rem;
+        }
+
+        .data-val {
+            color: var(--hud-accent);
+            font-weight: 500;
+        }
+
+        /* Right Panel - Metrics */
+        .right-deck {
+            top: 100px;
+            right: 20px;
+            width: 280px;
+            bottom: 100px;
+            padding: 16px;
+            overflow-y: auto;
+            border-right: 2px solid var(--hud-info);
+        }
+
+        .health-bar-container {
+            width: 100%;
+            height: 6px;
+            background: #374151;
+            border-radius: 3px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+
+        .health-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--hud-info), var(--hud-success));
+            width: 80%;
+            transition: width 0.5s ease;
+        }
+
+        .wpm-gauge {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 30px;
+            margin-top: 10px;
+        }
+
+        .wpm-bar {
+            flex: 1;
+            background: #374151;
+            border-radius: 2px;
+            transition: height 0.2s;
+        }
+
+        .wpm-bar.active {
+            background: var(--hud-info);
+            box-shadow: 0 0 8px var(--hud-info);
+        }
+
+        /* Center - Transcript & alerts */
+        .transcript-deck {
+            bottom: 20px;
+            left: 300px;
+            right: 320px;
+            height: 200px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 2px solid var(--hud-info);
+        }
+
+        .transcript-area {
+            flex: 1;
+            overflow-y: auto;
+            mask-image: linear-gradient(to bottom, transparent, black 10%);
+        }
+
+        .msg-bubble {
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            max-width: 90%;
+            animation: fade-in 0.3s forwards;
+            opacity: 0;
+        }
+
+        .msg-prospect {
+            background: rgba(52, 211, 153, 0.1);
+            border-left: 3px solid var(--hud-success);
+            align-self: flex-start;
+        }
+
+        .msg-agent {
+            background: rgba(96, 165, 250, 0.1);
+            border-right: 3px solid var(--hud-info);
+            align-self: flex-end;
+            text-align: right;
+            margin-left: auto;
+        }
+
+        /* Floating HUD Elements */
+        .coaching-tip {
+            position: fixed;
+            top: 180px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid var(--hud-warning);
+            padding: 12px 24px;
+            border-radius: 4px;
+            text-align: center;
+            display: none;
+            z-index: 100;
+        }
+
+        .audio-controls {
+            position: fixed;
+            bottom: 240px;
+            left: 300px;
+            right: 320px;
+            height: 40px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--hud-secondary);
+            padding: 0 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Gamification */
+        .xp-pop {
+            position: absolute;
+            color: var(--hud-success);
+            font-weight: bold;
+            font-family: 'Orbitron';
+            animation: float-up 1s forwards;
+            pointer-events: none;
+            text-shadow: 0 0 5px var(--hud-success);
+        }
+
+        @keyframes pulse-red {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes float-up {
+            0% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-30px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes fade-in {
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 2px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+
+        /* Dropdown */
+        .file-select {
+            flex: 1;
+            background: #111827;
+            color: #fff;
+            border: 1px solid #374151;
+            padding: 0 10px;
+            font-family: 'Rajdhani';
+            outline: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-layer"></div>
+    <div class="grid-overlay"></div>
+    <div class="vignette"></div>
+
+    <!-- AUDIO ELEMENT (Hidden) -->
+    <audio id="audioSource"></audio>
+
+    <!-- TOP HUD -->
+    <div class="glass-panel top-deck">
+        <div class="stat-group">
+            <div class="stat-label">TIME</div>
+            <div class="stat-value" id="timer">00:00</div>
+        </div>
+        <div class="stat-group">
+            <div class="stat-label">CONFIDENCE</div>
+            <div class="stat-value" id="confidence">50%</div>
+        </div>
+        <div class="stat-group">
+            <div class="stat-label">STATUS</div>
+            <div class="recording-indicator" id="recDot"></div>
+        </div>
+    </div>
+
+    <!-- LEFT PROFILE -->
+    <div class="glass-panel left-deck">
+        <div class="panel-header">PROSPECT INTEL [L1]</div>
+        <div class="profile-card">
+            <div class="avatar">👤</div>
+            <div style="font-size: 1.2rem; color: #fff; font-weight: 700;">Corey Lowther</div>
+            <div style="color: #9ca3af; font-size: 0.9rem;">Lead ID: #88291</div>
+        </div>
+        <div class="data-row"><span class="data-lbl">Company</span><span class="data-val">Unknown LLC</span></div>
+        <div class="data-row"><span class="data-lbl">Role</span><span class="data-val">Decision Maker</span></div>
+        <div class="data-row"><span class="data-lbl">Source</span><span class="data-val">LinkedIn Ads</span></div>
+        <div class="data-row"><span class="data-lbl">Intent</span><span class="data-val"
+                style="color: var(--hud-success)">High</span></div>
+
+        <div style="margin-top: 20px;">
+            <div class="panel-header">PERSONALITY MATCH</div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 5px;">
+                <span>Analytical</span>
+                <span>85%</span>
+            </div>
+            <div class="health-bar-container">
+                <div class="health-bar-fill" style="width: 85%; background: var(--hud-info)"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT METRICS -->
+    <div class="glass-panel right-deck">
+        <div class="panel-header">LIVE TELEMETRY</div>
+
+        <div style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                <span class="stat-label">ENGAGEMENT HEALTH</span>
+                <span id="engPct">78%</span>
+            </div>
+            <div class="health-bar-container">
+                <div class="health-bar-fill" id="engagementBar" style="width: 78%;"></div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <div class="stat-label">SPEECH VELOCITY (WPM)</div>
+            <div class="stat-value" style="font-size: 1.4rem;" id="wpmDisplay">0</div>
+            <div class="wpm-gauge" id="wpmGraph">
+                <!-- Bars generated by JS -->
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <div class="stat-label">SILENCE DETECTOR</div>
+            <div class="stat-value" style="font-size: 1.4rem; color: var(--hud-secondary);" id="silenceTimer">0s</div>
+        </div>
+
+        <div>
+            <div class="panel-header">DETECTED OBJECTIONS</div>
+            <div id="objectionList" style="font-size: 0.85rem; color: var(--hud-warning);">
+                -- None --
+            </div>
+        </div>
+    </div>
+
+    <!-- COACHING POPUP -->
+    <div class="coaching-tip" id="coach">
+        <div style="color: var(--hud-warning); font-size: 0.75rem; letter-spacing: 2px; margin-bottom: 5px;">TACTICAL
+            ADVICE</div>
+        <div style="color: #fff; font-size: 1.1rem;" id="coachText"></div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="audio-controls">
+        <select class="file-select" id="fileSelect">
+            <option value="">-- Load Audio File --</option>
+            <option value="Telehalth - Corey Lowther (glp1 sale).mp3">Call: Corey Lowther (GLP1)</option>
+            <option value="Telehealth - shelymar Rivera  - GLP1 Sale.mp3">Call: Shelymar Rivera (GLP1)</option>
+        </select>
+        <button class="control-btn" onclick="togglePlay()">Play / Pause [Demo Mode]</button>
+    </div>
+
+    <!-- TRANSCRIPT -->
+    <div class="glass-panel transcript-deck">
+        <div class="panel-header">LIVE TRANSCRIPT STREAM</div>
+        <div class="transcript-area" id="transcript">
+            <div style="text-align: center; color: #4b5563; margin-top: 40px; font-style: italic;">
+                System Ready. Initialize Audio Stream.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Init
+        const audio = document.getElementById('audioSource');
+        // Disable mic by default for this demo to prevent loop/permissions issues
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let isSimulating = true;
+        let simIndex = 0;
+        let intervals = {};
+
+        // Demo Script (Triggers all UI features)
+        const DEMO_SCRIPT = [
+            { text: "Hello, this is Corey. How can I help?", speaker: 'prospect', delay: 2000 },
+            { text: "Hi Corey, I'm calling about the new telehealth program.", speaker: 'agent', delay: 5000 },
+            { text: "I've heard about it. Is it expensive? I'm on a budget.", speaker: 'prospect', delay: 11000 }, // Triggers Price Objection
+            { text: "It's actually very affordable considering the value.", speaker: 'agent', delay: 14000 },
+            { text: "I see. Does it include the medication directly?", speaker: 'prospect', delay: 17000 },
+            { text: "Yes, it's all-inclusive. No hidden fees.", speaker: 'agent', delay: 20000 },
+            { text: "That sounds great. I am interested.", speaker: 'prospect', delay: 23000 }, // Triggers +XP/Health
+            { text: "Perfect. Let's get you signed up right now.", speaker: 'agent', delay: 26000 },
+            { text: "I'm a bit busy right now though, can we do this later?", speaker: 'prospect', delay: 29000 } // Triggers Time Objection
+        ];
+
+        // Setup WPM Graph
+        const wpmGraph = document.getElementById('wpmGraph');
+        for (let i = 0; i < 10; i++) {
+            let bar = document.createElement('div');
+            bar.className = 'wpm-bar';
+            bar.style.height = '10%';
+            wpmGraph.appendChild(bar);
+        }
+
+        // Functions
+        function togglePlay() {
+            const file = document.getElementById('fileSelect').value;
+            if (!file) { alert("Select a file first!"); return; }
+
+            if (audio.src.indexOf(file) === -1) {
+                audio.src = file;
+            }
+
+            if (audio.paused) {
+                // User wants to play
+                audio.play()
+                    .then(() => {
+                        startSimulation();
+                    })
+                    .catch(e => console.error("Audio error:", e));
+            } else {
+                // User wants to pause
+                audio.pause();
+                stopSimulation();
+            }
+        }
+
+        function startSimulation() {
+            // Audio is playing, now we mock the intelligence
+            addSystemMsg("Analzying Audio Stream (Simulation Mode)...");
+            document.getElementById('recDot').classList.add('active');
+
+            // Timers
+            let callTime = 0;
+            let silenceTime = 0;
+
+            // Clock
+            clearInterval(intervals.clock);
+            intervals.clock = setInterval(() => {
+                callTime++;
+                const m = Math.floor(callTime / 60).toString().padStart(2, '0');
+                const s = (callTime % 60).toString().padStart(2, '0');
+                document.getElementById('timer').innerText = `${m}:${s}`;
+            }, 1000);
+
+            // Mock WPM fluctuation
+            clearInterval(intervals.wpm);
+            intervals.wpm = setInterval(() => {
+                const randomWPM = Math.floor(Math.random() * (160 - 120) + 120);
+                updateWPMUI(randomWPM);
+            }, 1000);
+
+            // Script Runner
+            simIndex = 0;
+            const startTime = Date.now();
+            clearInterval(intervals.script);
+
+            intervals.script = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+
+                // Find next line to play
+                if (simIndex < DEMO_SCRIPT.length) {
+                    const line = DEMO_SCRIPT[simIndex];
+                    if (elapsed >= line.delay) {
+                        processFinalText(line.text, line.speaker);
+                        simIndex++;
+                    }
+                } else {
+                    // Script done
+                    clearInterval(intervals.script);
+                }
+            }, 500);
+        }
+
+        function stopSimulation() {
+            document.getElementById('recDot').classList.remove('active');
+            clearInterval(intervals.clock);
+            clearInterval(intervals.wpm);
+            clearInterval(intervals.script);
+        }
+
+        function processFinalText(text, speaker = 'agent') {
+            // Add to UI
+            const div = document.createElement('div');
+            const type = speaker === 'agent' ? 'msg-agent' : 'msg-prospect';
+            div.className = `msg-bubble ${type}`;
+            div.innerText = text;
+
+            const tArea = document.getElementById('transcript');
+            // Remove placeholder
+            if (tArea.innerText.includes("System Ready")) tArea.innerHTML = "";
+
+            tArea.appendChild(div);
+            tArea.scrollTop = tArea.scrollHeight;
+
+            // Analysis
+            analyzeContent(text.toLowerCase());
+        }
+
+        function analyzeContent(text) {
+            // Simple keyword matching for demo
+            if (text.includes('price') || text.includes('expensive') || text.includes('cost')) {
+                showObjection("Pricing Concern");
+                showCoach("Acknowledge cost, pivot to ROI immediately.");
+                dropHealth(10);
+            }
+            if (text.includes('yes') || text.includes('agree') || text.includes('interested')) {
+                popXP();
+                addHealth(5);
+            }
+            if (text.includes('busy') || text.includes('time') || text.includes('later')) {
+                showObjection("Time/Availability");
+                dropHealth(5);
+            }
+        }
+
+        function updateWPMUI(currentWPM) {
+            document.getElementById('wpmDisplay').innerText = currentWPM;
+            const bars = document.querySelectorAll('.wpm-bar');
+            for (let i = 0; i < bars.length - 1; i++) {
+                bars[i].style.height = bars[i + 1].style.height;
+                bars[i].className = bars[i + 1].className;
+            }
+            const lastBar = bars[bars.length - 1];
+            const height = Math.min(100, Math.max(10, currentWPM / 2)) + '%';
+            lastBar.style.height = height;
+            lastBar.className = 'wpm-bar ' + (currentWPM > 140 ? 'active' : '');
+        }
+
+        // Visual FX
+        function showCoach(msg) {
+            const c = document.getElementById('coach');
+            document.getElementById('coachText').innerText = msg;
+            c.style.display = 'block';
+        }
+        function hideCoach() {
+            document.getElementById('coach').style.display = 'none';
+        }
+
+        function showObjection(obj) {
+            const list = document.getElementById('objectionList');
+            if (list.innerText.includes("None")) list.innerHTML = "";
+            list.innerHTML += `<div>⚠ ${obj}</div>`;
+        }
+
+        let confidence = 50;
+        let health = 78;
+
+        function addHealth(amt) {
+            health = Math.min(100, health + amt);
+            confidence = Math.min(100, confidence + amt / 2);
+            updateStats();
+        }
+        function dropHealth(amt) {
+            health = Math.max(0, health - amt);
+            confidence = Math.max(0, confidence - amt / 2);
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('engPct').innerText = health + '%';
+            document.getElementById('engagementBar').style.width = health + '%';
+            document.getElementById('confidence').innerText = Math.floor(confidence) + '%';
+        }
+
+        function popXP() {
+            const el = document.createElement('div');
+            el.className = 'xp-pop';
+            el.innerText = '+XP';
+            el.style.left = (Math.random() * 80 + 10) + '%';
+            el.style.top = '50%';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 1000);
+        }
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && e.target.tagName !== 'SELECT') {
+                e.preventDefault(); // Prevent scrolling
+                togglePlay();
+            }
+            if (e.code === 'KeyF') {
+                toggleFullScreen();
+            }
+        });
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        function addSystemMsg(msg) {
+            const tArea = document.getElementById('transcript');
+            if (tArea.innerText.includes("System Ready")) tArea.innerHTML = "";
+            const div = document.createElement('div');
+            div.className = 'msg-bubble';
+            div.style.color = '#6b7280';
+            div.style.textAlign = 'center';
+            div.style.border = 'none';
+            div.innerText = `[${msg}]`;
+            tArea.appendChild(div);
+        }
+    </script>
+</body>
+
+</html>

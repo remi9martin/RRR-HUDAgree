@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD - v7 LIVE (Mic Enabled)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
+
+        :root {
+            --hud-primary: #9ca3af;
+            --hud-secondary: #d1d5db;
+            --hud-accent: #ffffff;
+            --hud-success: #34d399;
+            --hud-warning: #fbbf24;
+            --hud-danger: #ef4444;
+            --hud-info: #60a5fa;
+            --gunmetal: #2a2d32;
+            --gunmetal-dark: #111827;
+            --glass-bg: rgba(31, 41, 55, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--gunmetal-dark);
+            color: var(--hud-secondary);
+            min-height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Background Effects */
+        .bg-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, #1f2937 0%, #000000 100%);
+            z-index: -2;
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+        }
+
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 40%, #000 100%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Main Containers */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            position: absolute;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .panel-header {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--hud-primary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Top HUD */
+        .top-deck {
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 40px;
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            border-top: 2px solid var(--hud-info);
+        }
+
+        .stat-group {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: #6b7280;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            color: var(--hud-accent);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        .dominance-bar-container {
+            width: 100px;
+            height: 8px;
+            background: #374151;
+            display: flex;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .recording-indicator {
+            width: 12px;
+            height: 12px;
+            background: #374151;
+            border-radius: 50%;
+            box-shadow: 0 0 0 2px #374151;
+            transition: all 0.3s;
+        }
+
+        .recording-indicator.active {
+            background: var(--hud-danger);
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+            animation: pulse-red 2s infinite;
+            box-shadow: 0 0 15px var(--hud-danger);
+        }
+
+        /* Left Panel - Profile */
+        .left-deck {
+            top: 100px;
+            left: 20px;
+            width: 260px;
+            bottom: 100px;
+            padding: 16px;
+            overflow-y: auto;
+            border-left: 2px solid var(--hud-info);
+        }
+
+        .profile-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .avatar {
+            width: 70px;
+            height: 70px;
+            background: #374151;
+            border-radius: 50%;
+            margin-bottom: 10px;
+            display: grid;
+            place-items: center;
+            font-size: 2rem;
+            border: 2px solid var(--hud-info);
+            box-shadow: 0 0 20px rgba(96, 165, 250, 0.2);
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            font-size: 0.85rem;
+        }
+
+        .data-val {
+            color: var(--hud-accent);
+            font-weight: 500;
+        }
+
+        /* Right Panel - Metrics */
+        .right-deck {
+            top: 100px;
+            right: 20px;
+            width: 280px;
+            bottom: 100px;
+            padding: 16px;
+            overflow-y: auto;
+            border-right: 2px solid var(--hud-info);
+        }
+
+        .health-bar-container {
+            width: 100%;
+            height: 6px;
+            background: #374151;
+            border-radius: 3px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+
+        .health-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--hud-info), var(--hud-success));
+            width: 80%;
+            transition: width 0.5s ease;
+        }
+
+        .wpm-gauge {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 30px;
+            margin-top: 10px;
+        }
+
+        .wpm-bar {
+            flex: 1;
+            background: #374151;
+            border-radius: 2px;
+            transition: height 0.2s;
+        }
+
+        .wpm-bar.active {
+            background: var(--hud-info);
+            box-shadow: 0 0 8px var(--hud-info);
+        }
+
+        .speedometer-container {
+            position: relative;
+            width: 100%;
+            height: 60px;
+            background: radial-gradient(circle at bottom, #374151 0%, transparent 70%);
+            border-top-left-radius: 60px;
+            border-top-right-radius: 60px;
+            overflow: hidden;
+            margin-top: 10px;
+            border-bottom: 1px solid #4b5563;
+        }
+
+        .speedometer-needle {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 2px;
+            height: 50px;
+            background: var(--hud-accent);
+            transform-origin: bottom center;
+            transform: rotate(-45deg);
+            /* -90 to 90 */
+            transition: transform 0.5s cubic-bezier(0.4, 2.08, 0.55, 0.44);
+            z-index: 10;
+        }
+
+        .speedometer-label {
+            position: absolute;
+            bottom: 5px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #9ca3af;
+        }
+
+        /* Center - Transcript & alerts */
+        .transcript-deck {
+            bottom: 20px;
+            left: 300px;
+            right: 320px;
+            height: 200px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 2px solid var(--hud-info);
+        }
+
+        .transcript-area {
+            flex: 1;
+            overflow-y: auto;
+            mask-image: linear-gradient(to bottom, transparent, black 10%);
+        }
+
+        .msg-bubble {
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            max-width: 90%;
+            animation: fade-in 0.3s forwards;
+            opacity: 0;
+        }
+
+        .msg-prospect {
+            background: rgba(52, 211, 153, 0.1);
+            border-left: 3px solid var(--hud-success);
+            align-self: flex-start;
+        }
+
+        .msg-agent {
+            background: rgba(96, 165, 250, 0.1);
+            border-right: 3px solid var(--hud-info);
+            align-self: flex-end;
+            text-align: right;
+            margin-left: auto;
+        }
+
+        /* Floating HUD Elements */
+        .coaching-tip {
+            position: fixed;
+            top: 180px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid var(--hud-warning);
+            padding: 12px 24px;
+            border-radius: 4px;
+            text-align: center;
+            display: none;
+            z-index: 100;
+        }
+
+        .audio-controls {
+            position: fixed;
+            bottom: 240px;
+            left: 300px;
+            right: 320px;
+            height: 40px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--hud-secondary);
+            padding: 0 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .control-btn.active {
+            background: var(--hud-danger);
+            color: white;
+            border-color: red;
+            box-shadow: 0 0 10px var(--hud-danger);
+        }
+
+        /* Gamification */
+        .xp-pop {
+            position: absolute;
+            color: var(--hud-success);
+            font-weight: bold;
+            font-family: 'Orbitron';
+            animation: float-up 1s forwards;
+            pointer-events: none;
+            text-shadow: 0 0 5px var(--hud-success);
+        }
+
+        @keyframes pulse-red {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes float-up {
+            0% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-30px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes fade-in {
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 2px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+
+        /* Dropdown */
+        .file-select {
+            flex: 1;
+            background: #111827;
+            color: #fff;
+            border: 1px solid #374151;
+            padding: 0 10px;
+            font-family: 'Rajdhani';
+            outline: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-layer"></div>
+    <div class="grid-overlay"></div>
+    <div class="vignette"></div>
+
+    <!-- TOP HUD -->
+    <div class="glass-panel top-deck">
+        <div class="stat-group">
+            <div class="stat-label">TIME</div>
+            <div class="stat-value" id="timer">00:00</div>
+        </div>
+        <div class="stat-group">
+            <div class="stat-label">DOMINANCE</div>
+            <div class="dominance-bar-container">
+                <div id="domAgent" style="width: 50%; background: var(--hud-info);"></div>
+                <div id="domProspect" style="width: 50%; background: var(--hud-success);"></div>
+            </div>
+            <div class="stat-label" style="font-size: 0.5rem; margin-top:2px;">AGENT / PROSPECT</div>
+        </div>
+        <div class="stat-group">
+            <div class="stat-label">AMMO (TACTICS)</div>
+            <div class="stat-value" id="ammoCount" style="color: var(--hud-warning)">100%</div>
+        </div>
+        <div class="stat-group">
+            <div class="stat-label">STATUS</div>
+            <div class="recording-indicator" id="recDot"></div>
+        </div>
+    </div>
+
+    <!-- LEFT PROFILE -->
+    <div class="glass-panel left-deck">
+        <div class="panel-header">PROSPECT INTEL [L1]</div>
+        <div class="profile-card">
+            <div class="avatar">👤</div>
+            <div style="font-size: 1.2rem; color: #fff; font-weight: 700;">Live Caller</div>
+            <div style="color: #9ca3af; font-size: 0.9rem;">ID: #Unknown</div>
+        </div>
+        <div class="data-row"><span class="data-lbl">Company</span><span class="data-val">--</span></div>
+        <div class="data-row"><span class="data-lbl">Role</span><span class="data-val">Decision Maker</span></div>
+        <div class="data-row"><span class="data-lbl">Source</span><span class="data-val">Inbound</span></div>
+
+        <div class="data-row"><span class="data-lbl">Intent</span><span class="data-val"
+                style="color: var(--hud-success)">Analyzing...</span></div>
+        <div class="data-row"><span class="data-lbl">Mindset (PBD)</span><span class="data-val" id="pbdVal"
+                style="color: var(--hud-info)">--</span></div>
+
+        <div style="margin-top: 20px;">
+            <div class="panel-header">ATTENTION SPAN</div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 5px;">
+                <span id="attnLabel">High</span>
+                <span id="attnVal">90%</span>
+            </div>
+            <div class="health-bar-container">
+                <div class="health-bar-fill" id="attnBar" style="width: 90%; background: var(--hud-warning)"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT METRICS -->
+    <div class="glass-panel right-deck">
+        <div class="panel-header">LIVE TELEMETRY</div>
+
+        <div style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                <span class="stat-label">ENGAGEMENT HEALTH</span>
+                <span id="engPct">78%</span>
+            </div>
+            <div class="health-bar-container">
+                <div class="health-bar-fill" id="engagementBar" style="width: 78%;"></div>
+            </div>
+        </div>
+
+        <!-- EMOTION SPEEDOMETER -->
+        <div style="margin-bottom: 20px;">
+            <div class="stat-label">LIVE SENTIMENT</div>
+            <div class="speedometer-container">
+                <div class="speedometer-needle" id="emotionNeedle"></div>
+                <div class="speedometer-label">NEG &nbsp;&nbsp;&nbsp;&nbsp; NEU &nbsp;&nbsp;&nbsp;&nbsp; POS</div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <div class="stat-label">SPEECH VELOCITY (WPM)</div>
+            <div class="stat-value" style="font-size: 1.4rem;" id="wpmDisplay">0</div>
+            <div class="wpm-gauge" id="wpmGraph">
+                <!-- Bars generated by JS -->
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <div class="stat-label">QUESTIONS ASKED</div>
+            <div class="stat-value" style="font-size: 1.4rem; color: var(--hud-info);" id="questionCount">0</div>
+        </div>
+
+        <div>
+            <div class="panel-header">DETECTED OBJECTIONS</div>
+            <div id="objectionList" style="font-size: 0.85rem; color: var(--hud-warning);">
+                -- None --
+            </div>
+        </div>
+    </div>
+
+    <!-- COACHING POPUP -->
+    <div class="coaching-tip" id="coach">
+        <div style="color: var(--hud-warning); font-size: 0.75rem; letter-spacing: 2px; margin-bottom: 5px;">TACTICAL
+            ADVICE</div>
+        <div style="color: #fff; font-size: 1.1rem;" id="coachText"></div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="audio-controls">
+        <button class="control-btn" id="micBtn" onclick="toggleMic()">START LIVE HUD</button>
+    </div>
+
+    <!-- TRANSCRIPT -->
+    <div class="glass-panel transcript-deck">
+        <div class="panel-header">LIVE TRANSCRIPT STREAM</div>
+        <div class="transcript-area" id="transcript">
+            <div style="text-align: center; color: #4b5563; margin-top: 40px; font-style: italic;">
+                System Initialized. Press START to enable microphone.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Init
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let isListening = false;
+        let silenceTime = 0;
+        let callTime = 0;
+        let wpmHistory = new Array(10).fill(0);
+        let wordCountWindow = 0;
+        let intervals = {};
+
+        let fullTranscript = "";
+        const API_URL = "http://localhost:47293/api/analyze/sales-call";
+
+        // Metrics
+        let agentWords = 0;
+        let prospectWords = 0;
+        let questionCount = 0;
+        let ammo = 100;
+        let confidence = 50;
+        let health = 78;
+        let attention = 90;
+        let sentimentVal = 0; // -90 to 90 degrees
+
+        // Setup WPM Graph
+        const wpmGraph = document.getElementById('wpmGraph');
+        for (let i = 0; i < 10; i++) {
+            let bar = document.createElement('div');
+            bar.className = 'wpm-bar';
+            bar.style.height = '10%';
+            wpmGraph.appendChild(bar);
+        }
+
+        // Setup Speech Rec
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                document.getElementById('recDot').classList.add('active');
+                addSystemMsg("Microphone Active. Listening...");
+                isListening = true;
+                document.getElementById('micBtn').classList.add('active');
+                document.getElementById('micBtn').innerText = "STOP LIVE HUD";
+            };
+
+            recognition.onend = () => {
+                document.getElementById('recDot').classList.remove('active');
+                // SAFE RESTART LOOP
+                if (isListening) {
+                    setTimeout(() => {
+                        try { if (isListening) recognition.start(); } catch (e) { }
+                    }, 500);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                if (event.error === 'not-allowed') {
+                    isListening = false;
+                    alert("Microphone Access Blocked! Please allow access in browser settings.");
+                    toggleMic();
+                }
+            };
+
+            recognition.onresult = (event) => {
+                silenceTime = 0; // Reset silence
+                updateSilenceUI();
+
+                let interim = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        const transcript = event.results[i][0].transcript;
+                        processFinalText(transcript);
+                    }
+                }
+            };
+        } else {
+            alert("Web Speech API not supported in this browser. Please use Chrome.");
+        }
+
+        // Functions
+        function toggleMic() {
+            if (isListening) {
+                isListening = false;
+                if (recognition) recognition.stop();
+                stopSessionTimers();
+                document.getElementById('micBtn').classList.remove('active');
+                document.getElementById('micBtn').innerText = "START LIVE HUD";
+                addSystemMsg("Session Stopped.");
+            } else {
+                isListening = true;
+                try { recognition.start(); } catch (e) { }
+                startSessionTimers();
+            }
+        }
+
+        function startSessionTimers() {
+            stopSessionTimers();
+            intervals.clock = setInterval(() => {
+                callTime++;
+                const m = Math.floor(callTime / 60).toString().padStart(2, '0');
+                const s = (callTime % 60).toString().padStart(2, '0');
+                document.getElementById('timer').innerText = `${m}:${s}`;
+
+                // Decay Attention slowly over time if no interaction
+                if (attention > 50) attention -= 1;
+                updateAttention();
+
+            }, 1000);
+
+            intervals.silence = setInterval(() => {
+                silenceTime++;
+                updateSilenceUI();
+            }, 1000);
+
+            intervals.wpm = setInterval(updateWPM, 1000);
+        }
+
+        function stopSessionTimers() {
+            clearInterval(intervals.clock);
+            clearInterval(intervals.silence);
+            clearInterval(intervals.wpm);
+        }
+
+        function processFinalText(text) {
+            fullTranscript += text + " ";
+            const words = text.split(' ').length;
+            wordCountWindow += words;
+            const lowerText = text.toLowerCase();
+
+            // Local Heuristic Fallback (Immediate Feedback)
+            const isAgent = (words > 10 || lowerText.includes("i am calling") || lowerText.includes("price is"));
+
+            if (isAgent) {
+                agentWords += words;
+            } else {
+                prospectWords += words;
+                attention = Math.min(100, attention + 15);
+            }
+
+            // Question Count (Local)
+            if (text.includes('?') && !isAgent) {
+                questionCount++;
+                document.getElementById('questionCount').innerText = questionCount;
+            }
+
+            // Local Dominance Update
+            const total = agentWords + prospectWords;
+            if (total > 0) {
+                const agPct = Math.floor((agentWords / total) * 100);
+                document.getElementById('domAgent').style.width = agPct + '%';
+                document.getElementById('domProspect').style.width = (100 - agPct) + '%';
+            }
+
+            // UI Bubble
+            const div = document.createElement('div');
+            const type = isAgent ? 'msg-agent' : 'msg-prospect';
+            div.className = `msg-bubble ${type}`;
+            div.innerText = text;
+            const tArea = document.getElementById('transcript');
+            tArea.appendChild(div);
+            tArea.scrollTop = tArea.scrollHeight;
+
+            if (tArea.innerText.includes("System Initialized")) tArea.innerHTML = "";
+            tArea.appendChild(div);
+
+            // ANALYZE WITH LLM API
+            triggerAIAnalysis();
+        }
+
+        async function triggerAIAnalysis() {
+            // Only analyze if we have enough text
+            if (fullTranscript.length < 20) return;
+
+            try {
+                // Visual Indicator of processing
+                document.querySelector('.panel-header').style.borderColor = "var(--hud-success)";
+
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ transcript: fullTranscript })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    // Update PBD Mindset
+                    if (data.pbd_mindset) {
+                        document.getElementById('pbdVal').innerText = data.pbd_mindset;
+                    }
+
+                    // Update Counts/Meters from LLM truth
+                    if (data.dominance_split) {
+                        document.getElementById('domAgent').style.width = data.dominance_split.agent + '%';
+                        document.getElementById('domProspect').style.width = data.dominance_split.prospect + '%';
+                    }
+
+                    if (data.ammo_remaining !== undefined) {
+                        document.getElementById('ammoCount').innerText = data.ammo_remaining + '%';
+                    }
+
+                    if (data.attention_probability !== undefined) {
+                        attention = data.attention_probability;
+                        updateAttention();
+                    }
+
+                    if (data.health_level !== undefined) {
+                        health = data.health_level;
+                        document.getElementById('engPct').innerText = health + '%';
+                        document.getElementById('engagementBar').style.width = health + '%';
+                    }
+
+                    // Smart Prompts / Coaching
+                    if (data.coaching_tip || data.smart_prompt) {
+                        showCoach(data.smart_prompt || data.coaching_tip);
+                    }
+
+                    // Sentiment Needle (-90 to 90)
+                    // If sentiment is POS, 0-90. NEG, -90-0.
+                    if (data.sentiment === 'positive') sentimentTo(45);
+                    else if (data.sentiment === 'negative') sentimentTo(-45);
+                    else sentimentTo(0);
+
+                    // Objections
+                    if (data.detected_objections && data.detected_objections.length > 0) {
+                        const list = data.detected_objections.map(o => `<div>⚠️ ${o.toUpperCase()}</div>`).join('');
+                        document.getElementById('objectionList').innerHTML = list;
+                    }
+                }
+
+                document.querySelector('.panel-header').style.borderColor = "";
+
+            } catch (e) {
+                console.error("AI Error:", e);
+            }
+        }
+
+        function updateAttention() {
+            const bar = document.getElementById('attnBar');
+            const lbl = document.getElementById('attnVal');
+
+            // Safety clamp
+            if (attention < 0) attention = 0;
+            if (attention > 100) attention = 100;
+
+            lbl.innerText = attention + '%';
+            bar.style.width = attention + '%';
+
+            if (attention < 40) {
+                bar.style.background = 'var(--hud-danger)';
+                document.getElementById('attnLabel').innerText = "BORED";
+                // showCoach("Lead is disengaged. Ask a question now!"); // Let LLM decide coaching
+            } else if (attention < 70) {
+                bar.style.background = 'var(--hud-warning)';
+                document.getElementById('attnLabel').innerText = "Waning";
+            } else {
+                bar.style.background = 'var(--hud-success)';
+                document.getElementById('attnLabel').innerText = "High";
+            }
+        }
+
+        function sentimentTo(deg) {
+            // deg between -90 (bad) and 90 (good)
+            const needle = document.getElementById('emotionNeedle');
+            needle.style.transform = `rotate(${deg}deg)`;
+
+            // Color change
+            if (deg < -20) needle.style.background = 'var(--hud-danger)';
+            else if (deg > 20) needle.style.background = 'var(--hud-success)';
+            else needle.style.background = 'var(--hud-warning)';
+        }
+
+        function useAmmo(amt) {
+            ammo = Math.max(0, ammo - amt);
+            document.getElementById('ammoCount').innerText = ammo + '%';
+        }
+
+        function updateWPM() {
+            const currentWPM = wordCountWindow * 60;
+            wordCountWindow = 0;
+            document.getElementById('wpmDisplay').innerText = currentWPM;
+
+            const bars = document.querySelectorAll('.wpm-bar');
+            for (let i = 0; i < bars.length - 1; i++) {
+                bars[i].style.height = bars[i + 1].style.height;
+                bars[i].className = bars[i + 1].className;
+            }
+            const lastBar = bars[bars.length - 1];
+            const height = Math.min(100, Math.max(10, currentWPM / 2)) + '%';
+            lastBar.style.height = height;
+            lastBar.className = 'wpm-bar ' + (currentWPM > 100 ? 'active' : '');
+        }
+
+        function updateSilenceUI() {
+            if (silenceTime > 5) showCoach("Dead air detected. Ask an open-ended question.");
+            else if (silenceTime < 2) hideCoach();
+        }
+
+        // Visual FX
+        function showCoach(msg) {
+            const c = document.getElementById('coach');
+            document.getElementById('coachText').innerText = msg;
+            c.style.display = 'block';
+        }
+        function hideCoach() {
+            document.getElementById('coach').style.display = 'none';
+        }
+
+        function showObjection(obj) {
+            const list = document.getElementById('objectionList');
+            if (list.innerText.includes("None")) list.innerHTML = "";
+            list.innerHTML += `<div>⚠ ${obj}</div>`;
+        }
+
+        function addHealth(amt) {
+            health = Math.min(100, health + amt);
+            updateStats();
+        }
+        function dropHealth(amt) {
+            health = Math.max(0, health - amt);
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('engPct').innerText = health + '%';
+            document.getElementById('engagementBar').style.width = health + '%';
+        }
+
+        function popXP() {
+            const el = document.createElement('div');
+            el.className = 'xp-pop';
+            el.innerText = '+XP';
+            el.style.left = (Math.random() * 80 + 10) + '%';
+            el.style.top = '50%';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 1000);
+        }
+
+        function addSystemMsg(msg) {
+            const tArea = document.getElementById('transcript');
+            const div = document.createElement('div');
+            div.className = 'msg-bubble';
+            div.style.color = '#6b7280';
+            div.style.textAlign = 'center';
+            div.style.border = 'none';
+            div.innerText = `[${msg}]`;
+            tArea.appendChild(div);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD - RRR-HUDAgree</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: #000;
+            color: #00ffff;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Video game style background */
+        .bg-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, #0a1628 0%, #000 100%);
+            z-index: -2;
+        }
+
+        /* Grid overlay */
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+        }
+
+        /* Main HUD container */
+        .hud-frame {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        /* Corner brackets */
+        .corner {
+            position: fixed;
+            width: 80px;
+            height: 80px;
+            z-index: 100;
+        }
+
+        .corner::before,
+        .corner::after {
+            content: '';
+            position: absolute;
+            background: linear-gradient(90deg, #00ffff, transparent);
+        }
+
+        .corner-tl {
+            top: 10px;
+            left: 10px;
+        }
+
+        .corner-tl::before {
+            width: 60px;
+            height: 2px;
+            top: 0;
+            left: 0;
+        }
+
+        .corner-tl::after {
+            width: 2px;
+            height: 60px;
+            top: 0;
+            left: 0;
+            background: linear-gradient(180deg, #00ffff, transparent);
+        }
+
+        .corner-tr {
+            top: 10px;
+            right: 10px;
+        }
+
+        .corner-tr::before {
+            width: 60px;
+            height: 2px;
+            top: 0;
+            right: 0;
+            background: linear-gradient(-90deg, #00ffff, transparent);
+        }
+
+        .corner-tr::after {
+            width: 2px;
+            height: 60px;
+            top: 0;
+            right: 0;
+            background: linear-gradient(180deg, #00ffff, transparent);
+        }
+
+        .corner-bl {
+            bottom: 10px;
+            left: 10px;
+        }
+
+        .corner-bl::before {
+            width: 60px;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+        }
+
+        .corner-bl::after {
+            width: 2px;
+            height: 60px;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(0deg, #00ffff, transparent);
+        }
+
+        .corner-br {
+            bottom: 10px;
+            right: 10px;
+        }
+
+        .corner-br::before {
+            width: 60px;
+            height: 2px;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(-90deg, #00ffff, transparent);
+        }
+
+        .corner-br::after {
+            width: 2px;
+            height: 60px;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(0deg, #00ffff, transparent);
+        }
+
+        /* Glass panel base */
+        .glass-panel {
+            background: rgba(0, 20, 40, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 4px;
+            position: absolute;
+        }
+
+        /* TOP CENTER - Call Timer & Confidence */
+        .top-center {
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 40px;
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .call-timer {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            color: #00ffff;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.8), 0 0 40px rgba(0, 255, 255, 0.4);
+            letter-spacing: 4px;
+        }
+
+        .confidence-display {
+            text-align: center;
+        }
+
+        .confidence-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: rgba(0, 255, 255, 0.6);
+        }
+
+        .confidence-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            color: #00ff88;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
+        }
+
+        /* LEFT PANEL - Lead Profile */
+        .left-panel {
+            top: 100px;
+            left: 20px;
+            width: 260px;
+            bottom: 100px;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .panel-header {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #00ffff;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+        }
+
+        .lead-avatar-frame {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 10px;
+            border: 2px solid #00ffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 20px rgba(0, 255, 255, 0.1);
+            animation: avatarPulse 3s infinite;
+        }
+
+        @keyframes avatarPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 20px rgba(0, 255, 255, 0.1);
+            }
+
+            50% {
+                box-shadow: 0 0 30px rgba(0, 255, 255, 0.5), inset 0 0 30px rgba(0, 255, 255, 0.2);
+            }
+        }
+
+        .lead-name {
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .lead-company {
+            text-align: center;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 15px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+            font-size: 0.85rem;
+        }
+
+        .data-label {
+            color: rgba(0, 255, 255, 0.6);
+        }
+
+        .data-value {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .tag-section {
+            margin-top: 12px;
+        }
+
+        .tag-section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: rgba(0, 255, 255, 0.5);
+            margin-bottom: 6px;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .tag {
+            background: rgba(0, 255, 255, 0.15);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            color: #00ffff;
+        }
+
+        .tag.green {
+            background: rgba(0, 255, 136, 0.15);
+            border-color: rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+        }
+
+        .tag.orange {
+            background: rgba(255, 170, 0, 0.15);
+            border-color: rgba(255, 170, 0, 0.3);
+            color: #ffaa00;
+        }
+
+        .tag.purple {
+            background: rgba(200, 100, 255, 0.15);
+            border-color: rgba(200, 100, 255, 0.3);
+            color: #c864ff;
+        }
+
+        /* RIGHT PANEL - Metrics */
+        .right-panel {
+            top: 100px;
+            right: 20px;
+            width: 280px;
+            bottom: 100px;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .metric-block {
+            margin-bottom: 15px;
+        }
+
+        .metric-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(0, 255, 255, 0.5);
+            margin-bottom: 5px;
+        }
+
+        .metric-big {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            color: #00ff88;
+            text-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+        }
+
+        .metric-bar-container {
+            height: 6px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 3px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .metric-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ffff, #00ff88);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            transition: width 0.5s ease;
+        }
+
+        .emotion-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .emotion-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            padding: 10px;
+            text-align: center;
+            border-radius: 4px;
+        }
+
+        .emotion-icon {
+            font-size: 1.5rem;
+            margin-bottom: 4px;
+        }
+
+        .emotion-who {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+        }
+
+        .emotion-state {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #00ff88;
+        }
+
+        /* BOTTOM CENTER - Transcript */
+        .bottom-center {
+            bottom: 20px;
+            left: 300px;
+            right: 320px;
+            height: 200px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .transcript-scroll {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+
+        .transcript-line {
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            border-left: 2px solid;
+            background: rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .transcript-line.agent {
+            border-color: #0088ff;
+        }
+
+        .transcript-line.lead {
+            border-color: #00ff88;
+        }
+
+        .transcript-speaker {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .transcript-line.agent .transcript-speaker {
+            color: #0088ff;
+        }
+
+        .transcript-line.lead .transcript-speaker {
+            color: #00ff88;
+        }
+
+        .transcript-text {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* COACHING BOX - floating */
+        .coaching-float {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 100, 0, 0.15);
+            border: 2px solid #ff6600;
+            padding: 20px 30px;
+            border-radius: 8px;
+            text-align: center;
+            max-width: 500px;
+            animation: coachPulse 2s infinite;
+            z-index: 50;
+        }
+
+        @keyframes coachPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(255, 100, 0, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 40px rgba(255, 100, 0, 0.6), 0 0 60px rgba(255, 100, 0, 0.3);
+            }
+        }
+
+        .coaching-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            color: #ff6600;
+            margin-bottom: 8px;
+            letter-spacing: 3px;
+        }
+
+        .coaching-text {
+            font-size: 1.1rem;
+            color: #fff;
+            line-height: 1.5;
+        }
+
+        /* Quick Questions Bar */
+        .quick-bar {
+            position: fixed;
+            bottom: 240px;
+            left: 300px;
+            right: 320px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+
+        .quick-btn {
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            color: #00ffff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        .quick-btn:hover {
+            background: rgba(0, 255, 255, 0.25);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Status indicators */
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff88;
+            box-shadow: 0 0 10px #00ff88;
+            animation: blink 1s infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-layer"></div>
+    <div class="grid-overlay"></div>
+
+    <!-- Corner brackets -->
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
+
+    <!-- TOP CENTER -->
+    <div class="glass-panel top-center">
+        <div>
+            <div style="font-size: 0.7rem; color: rgba(0,255,255,0.5); text-transform: uppercase;">Call Duration</div>
+            <div class="call-timer" id="timer">04:32</div>
+        </div>
+        <div style="width: 1px; height: 50px; background: rgba(0,255,255,0.3);"></div>
+        <div class="confidence-display">
+            <div class="confidence-label">Close Probability</div>
+            <div class="confidence-value" id="confidence">67%</div>
+        </div>
+        <div style="width: 1px; height: 50px; background: rgba(0,255,255,0.3);"></div>
+        <div>
+            <span class="status-dot"></span>
+            <span style="color: #00ff88; font-size: 0.9rem;">RECORDING</span>
+        </div>
+    </div>
+
+    <!-- LEFT PANEL -->
+    <div class="glass-panel left-panel">
+        <div class="panel-header">Lead Profile</div>
+        <div class="lead-avatar-frame">👤</div>
+        <div class="lead-name">Michael Thompson</div>
+        <div class="lead-company">Thompson Auto Parts LLC</div>
+
+        <div class="data-row">
+            <span class="data-label">Revenue</span>
+            <span class="data-value">$2.5M</span>
+        </div>
+        <div class="data-row">
+            <span class="data-label">Employees</span>
+            <span class="data-value">12</span>
+        </div>
+        <div class="data-row">
+            <span class="data-label">Current Rate</span>
+            <span class="data-value" style="color: #ffaa00;">2.9%</span>
+        </div>
+        <div class="data-row">
+            <span class="data-label">Monthly Vol</span>
+            <span class="data-value">$45K</span>
+        </div>
+
+        <div class="tag-section">
+            <div class="tag-section-title">Interests</div>
+            <div class="tags">
+                <span class="tag green">Classic Cars</span>
+                <span class="tag green">Golf</span>
+                <span class="tag green">Patriots</span>
+            </div>
+        </div>
+
+        <div class="tag-section">
+            <div class="tag-section-title">Personal</div>
+            <div class="tags">
+                <span class="tag purple">Dog: Max</span>
+                <span class="tag purple">2 Kids</span>
+            </div>
+        </div>
+
+        <div class="tag-section">
+            <div class="tag-section-title">Approach</div>
+            <div class="tags">
+                <span class="tag orange">Detail-oriented</span>
+                <span class="tag orange">Likes numbers</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="glass-panel right-panel">
+        <div class="panel-header">Live Metrics</div>
+
+        <div class="metric-block">
+            <div class="metric-title">Engagement Level</div>
+            <div class="metric-big">78%</div>
+            <div class="metric-bar-container">
+                <div class="metric-bar-fill" style="width: 78%;"></div>
+            </div>
+        </div>
+
+        <div class="metric-block">
+            <div class="metric-title">Talk Ratio</div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-top: 5px;">
+                <span style="color: #0088ff;">You: 62%</span>
+                <span style="color: #00ff88;">Lead: 38%</span>
+            </div>
+        </div>
+
+        <div class="metric-block">
+            <div class="metric-title">Time Since Lead Spoke</div>
+            <div class="metric-big" style="color: #ffaa00;" id="silenceTimer">12s</div>
+        </div>
+
+        <div class="metric-block">
+            <div class="metric-title">Emotional State</div>
+            <div class="emotion-display">
+                <div class="emotion-box">
+                    <div class="emotion-icon">😌</div>
+                    <div class="emotion-who">Agent</div>
+                    <div class="emotion-state">Confident</div>
+                </div>
+                <div class="emotion-box">
+                    <div class="emotion-icon">🤔</div>
+                    <div class="emotion-who">Lead</div>
+                    <div class="emotion-state" style="color: #ffaa00;">Hesitant</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="metric-block">
+            <div class="metric-title">Interest Points ✓</div>
+            <div style="font-size: 0.85rem; color: #00ff88; padding-left: 10px;">
+                • Cost savings ($5,400/yr)<br>
+                • Ease of use
+            </div>
+        </div>
+
+        <div class="metric-block">
+            <div class="metric-title">Objections ⚠</div>
+            <div style="font-size: 0.85rem; color: #ffaa00; padding-left: 10px;">
+                • Switching hassle
+            </div>
+        </div>
+    </div>
+
+    <!-- COACHING FLOAT -->
+    <div class="coaching-float" id="coaching">
+        <div class="coaching-label">⚡ Coaching Tip</div>
+        <div class="coaching-text">He mentioned "hassle" - Address switching concern NOW.<br>Mention we handle the
+            entire transition for free.</div>
+    </div>
+
+    <!-- QUICK QUESTIONS -->
+    <div class="quick-bar">
+        <button class="quick-btn">💬 "How long in business?"</button>
+        <button class="quick-btn">💬 "What's your busiest season?"</button>
+        <button class="quick-btn">💬 "Any growth plans?"</button>
+        <button class="quick-btn">🐕 "How's Max doing?"</button>
+    </div>
+
+    <!-- BOTTOM TRANSCRIPT -->
+    <div class="glass-panel bottom-center">
+        <div class="transcript-scroll" id="transcript">
+            <div class="transcript-line agent">
+                <div class="transcript-speaker">Agent</div>
+                <div class="transcript-text">Hi Michael! I noticed you've been with Square for a while - how's that been
+                    working out?</div>
+            </div>
+            <div class="transcript-line lead">
+                <div class="transcript-speaker">Lead</div>
+                <div class="transcript-text">Yeah, it's been okay I guess. The fees are kind of high but it's easy to
+                    use.</div>
+            </div>
+            <div class="transcript-line agent">
+                <div class="transcript-speaker">Agent</div>
+                <div class="transcript-text">What if I told you we could keep that simplicity but cut your fees by about
+                    40%? That's $5,400 back in your pocket.</div>
+            </div>
+            <div class="transcript-line lead">
+                <div class="transcript-speaker">Lead</div>
+                <div class="transcript-text">Hmm, that's interesting. But switching sounds like a hassle...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Timer
+        let seconds = 272;
+        setInterval(() => {
+            seconds++;
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = (seconds % 60).toString().padStart(2, '0');
+            document.getElementById('timer').textContent = `${mins}:${secs}`;
+        }, 1000);
+
+        // Confidence fluctuation
+        let conf = 67;
+        setInterval(() => {
+            conf += (Math.random() - 0.4) * 3;
+            conf = Math.max(30, Math.min(95, conf));
+            document.getElementById('confidence').textContent = Math.round(conf) + '%';
+            document.getElementById('confidence').style.color = conf > 70 ? '#00ff88' : conf > 50 ? '#ffaa00' : '#ff4444';
+        }, 3000);
+
+        // Silence timer
+        let silence = 12;
+        setInterval(() => {
+            silence++;
+            document.getElementById('silenceTimer').textContent = silence + 's';
+            if (silence > 30) {
+                document.getElementById('silenceTimer').style.color = '#ff4444';
+            } else if (silence > 20) {
+                document.getElementById('silenceTimer').style.color = '#ffaa00';
+            }
+        }, 1000);
+
+        // Click coaching to dismiss
+        document.getElementById('coaching').addEventListener('click', function () {
+            this.style.display = 'none';
+        });
+    </script>
+</body>
+
+</html>

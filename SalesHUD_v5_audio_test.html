@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD - RRR-HUDAgree (Audio Test)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
+
+        :root {
+            --hud-primary: #8a8a8a;
+            --hud-secondary: #c0c0c0;
+            --hud-accent: #ffffff;
+            --hud-success: #4ade80;
+            --hud-warning: #fbbf24;
+            --hud-danger: #ef4444;
+            --gunmetal: #2a2d32;
+            --gunmetal-dark: #1a1c20;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--gunmetal-dark);
+            color: var(--hud-secondary);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .bg-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, #1a1c20 0%, #0d0e10 100%);
+            z-index: -2;
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.01) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.01) 1px, transparent 1px);
+            background-size: 80px 80px;
+            z-index: -1;
+        }
+
+        .glass-panel {
+            background: rgba(42, 45, 50, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            position: absolute;
+        }
+
+        /* Layout */
+        .top-center {
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 30px;
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .left-panel {
+            top: 80px;
+            left: 15px;
+            width: 240px;
+            bottom: 80px;
+            padding: 12px;
+            overflow-y: auto;
+        }
+
+        .right-panel {
+            top: 80px;
+            right: 15px;
+            width: 250px;
+            bottom: 80px;
+            padding: 12px;
+            overflow-y: auto;
+        }
+
+        /* Typography & Components */
+        .call-timer {
+            font-family: 'Orbitron', monospace;
+            font-size: 2rem;
+            color: var(--hud-accent);
+        }
+
+        .confidence-value {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.6rem;
+            color: var(--hud-success);
+        }
+
+        .metric-block {
+            margin-bottom: 15px;
+        }
+
+        .metric-title {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.3);
+            letter-spacing: 1px;
+        }
+
+        .metric-big {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            color: var(--hud-success);
+        }
+
+        .panel-header {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--hud-primary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+        }
+
+        /* Transcript Area */
+        .bottom-center {
+            bottom: 15px;
+            left: 270px;
+            right: 280px;
+            height: 180px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .transcript-scroll {
+            flex: 1;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        .transcript-line {
+            padding: 6px 12px;
+            margin-bottom: 6px;
+            border-left: 3px solid;
+            background: rgba(0, 0, 0, 0.2);
+            animation: slideIn 0.3s ease;
+        }
+
+        .transcript-line.final {
+            border-color: var(--hud-success);
+        }
+
+        .transcript-line.interim {
+            border-color: var(--hud-warning);
+            opacity: 0.7;
+        }
+
+        .transcript-text {
+            font-size: 0.9rem;
+            color: #fff;
+            line-height: 1.4;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Audio Player Bar */
+        .audio-bar {
+            position: fixed;
+            bottom: 210px;
+            left: 270px;
+            right: 280px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        select {
+            background: #000;
+            color: var(--hud-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 4px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.8rem;
+            flex: 1;
+        }
+
+        audio {
+            height: 25px;
+            flex: 2;
+        }
+
+        /* Status Dot */
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: #333;
+            border-radius: 50%;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .status-dot.listening {
+            background: var(--hud-danger);
+            box-shadow: 0 0 10px var(--hud-danger);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* Alert/Coaching */
+        .coaching-float {
+            position: fixed;
+            top: 110px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid var(--hud-warning);
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-align: center;
+            display: none;
+            z-index: 50;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-layer"></div>
+    <div class="grid-overlay"></div>
+
+    <!-- Top Bar -->
+    <div class="glass-panel top-center">
+        <div>
+            <div style="font-size: 0.6rem; opacity: 0.5;">DURATION</div>
+            <div class="call-timer" id="timer">00:00</div>
+        </div>
+        <div style="width:1px; height:30px; background:rgba(255,255,255,0.1)"></div>
+        <div style="text-align:center">
+            <div style="font-size: 0.6rem; opacity: 0.5;">CONFIDENCE</div>
+            <div class="confidence-value" id="confidence">50%</div>
+        </div>
+        <div style="width:1px; height:30px; background:rgba(255,255,255,0.1)"></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <div class="status-dot" id="micStatus"></div>
+            <span style="font-size:0.75rem; font-weight:bold; letter-spacing:1px;">MIC</span>
+        </div>
+    </div>
+
+    <!-- Left Panel -->
+    <div class="glass-panel left-panel">
+        <div class="panel-header">Caller Profile</div>
+        <div style="text-align:center; margin-bottom:15px;">
+            <div
+                style="width:60px; height:60px; background:#333; border-radius:50%; margin:0 auto 5px; display:grid; place-items:center; border:1px solid #555;">
+                👤</div>
+            <div style="font-weight:bold; color:#fff;">Corey Lowther</div>
+            <div style="font-size:0.75rem; color:#888;">GLP-1 Lead</div>
+        </div>
+        <div class="metric-block">
+            <div class="metric-title">Campaign</div>
+            <div style="font-size:0.9rem; color:#fff;">Weight Loss - Q1</div>
+        </div>
+        <div class="metric-block">
+            <div class="metric-title">Lead Score</div>
+            <div style="font-size:1.2rem; color:var(--hud-warning);">High Intent</div>
+        </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="glass-panel right-panel">
+        <div class="panel-header">Real-time Analysis</div>
+        <div class="metric-block">
+            <div class="metric-title">Silence Duration</div>
+            <div class="metric-big" style="color:var(--hud-success);" id="silenceTimer">0s</div>
+        </div>
+        <div class="metric-block">
+            <div class="metric-title">Topics Detected</div>
+            <div id="topics" style="font-size:0.8rem; color:#ccc;">
+                Parsing...
+            </div>
+        </div>
+        <div class="metric-block">
+            <div class="metric-title">Sentiment</div>
+            <div class="metric-big" id="sentiment">Neutral</div>
+        </div>
+    </div>
+
+    <!-- Audio Player -->
+    <div class="audio-bar">
+        <select id="audioSelect" onchange="loadAudio()">
+            <option value="">Select File...</option>
+            <option value="Telehalth - Corey Lowther (glp1 sale).mp3">Corey Lowther (glp1 sale).mp3</option>
+            <option value="Telehealth - shelymar Rivera  - GLP1 Sale.mp3">shelymar Rivera - GLP1 Sale.mp3</option>
+        </select>
+        <audio id="audioPlayer" controls onplay="startListening()" onpause="stopListening()"></audio>
+    </div>
+
+    <!-- Transcript -->
+    <div class="glass-panel bottom-center">
+        <div class="transcript-scroll" id="transcript">
+            <!-- Live text goes here -->
+            <div style="font-size:0.8rem; color:#666; font-style:italic; text-align:center; margin-top:50px;">
+                Play audio to begin transcription...<br>
+                (Make sure your microphone can hear the speakers)
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Coach -->
+    <div class="coaching-float" id="coaching">
+        <div style="color:var(--hud-warning); font-size:0.7rem; letter-spacing:2px; margin-bottom:5px;">AI COACH SAYS:
+        </div>
+        <div style="color:#fff; font-size:1.1rem;" id="coachText">...</div>
+    </div>
+
+    <script>
+        // Setup Speech Recognition
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                document.getElementById('micStatus').classList.add('listening');
+                resetSilence();
+            };
+
+            recognition.onend = () => {
+                document.getElementById('micStatus').classList.remove('listening');
+                // Auto-restart if audio is playing
+                if (!document.getElementById('audioPlayer').paused) {
+                    recognition.start();
+                }
+            };
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                        addTranscriptLine(event.results[i][0].transcript, true);
+                        analyzeText(event.results[i][0].transcript);
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+
+                resetSilence();
+            };
+        } else {
+            alert("Web Speech API not supported in this browser. Use Chrome.");
+        }
+
+        // DOM Elements
+        const transcriptDiv = document.getElementById('transcript');
+        const silenceDisplay = document.getElementById('silenceTimer');
+        const confidenceDisplay = document.getElementById('confidence');
+        const sentimentDisplay = document.getElementById('sentiment');
+        const topicsDisplay = document.getElementById('topics');
+
+        // State
+        let silenceTime = 0;
+        let silenceInterval;
+        let callDuration = 0;
+        let callTimerInterval;
+        let confidenceScore = 50;
+        let detectedTopics = new Set();
+
+        function loadAudio() {
+            const file = document.getElementById('audioSelect').value;
+            if (file) {
+                document.getElementById('audioPlayer').src = file;
+            }
+        }
+
+        function startListening() {
+            if (recognition) recognition.start();
+
+            // Start Timers
+            clearInterval(silenceInterval);
+            silenceInterval = setInterval(() => {
+                silenceTime++;
+                silenceDisplay.textContent = silenceTime + 's';
+
+                // Silence Alerts
+                if (silenceTime > 5) silenceDisplay.style.color = 'var(--hud-warning)';
+                if (silenceTime > 10) {
+                    silenceDisplay.style.color = 'var(--hud-danger)';
+                    showCoach("Long silence detected. Ask a probing question.");
+                } else {
+                    hideCoach();
+                }
+            }, 1000);
+
+            clearInterval(callTimerInterval);
+            callTimerInterval = setInterval(() => {
+                callDuration++;
+                const mins = Math.floor(callDuration / 60).toString().padStart(2, '0');
+                const secs = (callDuration % 60).toString().padStart(2, '0');
+                document.getElementById('timer').textContent = `${mins}:${secs}`;
+            }, 1000);
+
+            // Clear placeholder text
+            if (transcriptDiv.innerText.includes("Play audio")) {
+                transcriptDiv.innerHTML = '';
+            }
+        }
+
+        function stopListening() {
+            if (recognition) recognition.stop();
+            clearInterval(silenceInterval);
+            clearInterval(callTimerInterval);
+        }
+
+        function resetSilence() {
+            silenceTime = 0;
+            silenceDisplay.textContent = '0s';
+            silenceDisplay.style.color = 'var(--hud-success)';
+        }
+
+        function addTranscriptLine(text, isFinal) {
+            const div = document.createElement('div');
+            div.className = `transcript-line ${isFinal ? 'final' : 'interim'}`;
+            div.innerHTML = `<span class="transcript-text">${text}</span>`;
+            transcriptDiv.appendChild(div);
+            transcriptDiv.scrollTop = transcriptDiv.scrollHeight;
+        }
+
+        function analyzeText(text) {
+            const lower = text.toLowerCase();
+
+            // Simple Keyword Analysis
+            if (lower.includes('price') || lower.includes('cost') || lower.includes('expensive')) {
+                detectedTopics.add("Pricing");
+                confidenceScore -= 5;
+                showCoach("Pricing objection detected. Highlight value proposition.");
+            }
+            if (lower.includes('yes') || lower.includes('agree') || lower.includes('interested') || lower.includes('ok')) {
+                confidenceScore += 5;
+                document.getElementById('sentiment').textContent = "Positive";
+                document.getElementById('sentiment').style.color = "var(--hud-success)";
+            }
+            if (lower.includes('no') || lower.includes('not sure') || lower.includes('problem')) {
+                confidenceScore -= 5;
+                document.getElementById('sentiment').textContent = "Negative";
+                document.getElementById('sentiment').style.color = "var(--hud-danger)";
+            }
+            if (lower.includes('doctor') || lower.includes('medical') || lower.includes('prescription')) {
+                detectedTopics.add("Medical/Rx");
+            }
+
+            // Update UI
+            confidenceScore = Math.max(0, Math.min(100, confidenceScore));
+            confidenceDisplay.textContent = confidenceScore + '%';
+
+            // Color scale for confidence
+            if (confidenceScore >= 70) confidenceDisplay.style.color = 'var(--hud-success)';
+            else if (confidenceScore >= 40) confidenceDisplay.style.color = 'var(--hud-warning)';
+            else confidenceDisplay.style.color = 'var(--hud-danger)';
+
+            topicsDisplay.innerHTML = Array.from(detectedTopics).map(t => `<span style="background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:3px; margin-right:4px;">${t}</span>`).join('');
+        }
+
+        function showCoach(msg) {
+            const coach = document.getElementById('coaching');
+            document.getElementById('coachText').textContent = msg;
+            coach.style.display = 'block';
+            setTimeout(() => { coach.style.display = 'none'; }, 5000);
+        }
+
+        function hideCoach() {
+            document.getElementById('coaching').style.display = 'none';
+        }
+    </script>
+</body>
+
+</html>

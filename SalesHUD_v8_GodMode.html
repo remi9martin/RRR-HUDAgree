@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD v8 - GOD MODE</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;500;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #050505;
+            --grid-color: rgba(255, 255, 255, 0.03);
+            --primary: #00ff9d;
+            /* Sci-fi Green */
+            --secondary: #00b8ff;
+            /* Sci-fi Blue */
+            --danger: #ff0055;
+            /* Sci-fi Red */
+            --warning: #ffcc00;
+            /* Sci-fi Yellow */
+            --muted: #444;
+            --panel-bg: rgba(10, 10, 10, 0.8);
+            --border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: #eee;
+            font-family: 'Chakra Petch', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            background-image:
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* --- LAYOUT GRID --- */
+        .hud-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            grid-template-rows: 60px 1fr 200px;
+            height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        /* --- PANELS --- */
+        .panel {
+            background: var(--panel-bg);
+            border: var(--border);
+            position: relative;
+            /* Corners */
+            clip-path: polygon(10px 0, 100% 0,
+                    100% calc(100% - 10px), calc(100% - 10px) 100%,
+                    0 100%, 0 10px);
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            opacity: 0.5;
+        }
+
+        .panel-header {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--primary);
+            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* --- TOP BAR (DOMINANCE) --- */
+        .top-bar {
+            grid-column: 1 / 4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            clip-path: none;
+        }
+
+        .dominance-wrapper {
+            width: 600px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .dom-label {
+            font-size: 0.8rem;
+            color: var(--muted);
+            letter-spacing: 2px;
+        }
+
+        .tug-of-war {
+            flex: 1;
+            height: 8px;
+            background: #222;
+            position: relative;
+            overflow: hidden;
+            border-radius: 4px;
+        }
+
+        .tug-bar {
+            height: 100%;
+            position: absolute;
+            transition: width 0.5s ease;
+        }
+
+        .tug-agent {
+            left: 0;
+            background: var(--secondary);
+            width: 50%;
+            z-index: 1;
+        }
+
+        .tug-prospect {
+            right: 0;
+            background: var(--danger);
+            width: 50%;
+            z-index: 1;
+        }
+
+        .center-marker {
+            position: absolute;
+            left: 50%;
+            top: -2px;
+            bottom: -2px;
+            width: 2px;
+            background: #fff;
+            z-index: 10;
+        }
+
+        /* --- LEFT PANEL (INTEL) --- */
+        .left-panel {
+            grid-row: 2 / 4;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .intel-item {
+            margin-bottom: 15px;
+            padding: 0 10px;
+        }
+
+        .intel-lbl {
+            font-size: 0.7rem;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .intel-val {
+            font-size: 1.1rem;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        /* PBD QUADRANT */
+        .pbd-quadrant {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+            border: 1px solid #333;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            font-size: 0.6rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .quad {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #555;
+            transition: all 0.3s;
+        }
+
+        .q-survival {
+            border-right: 1px solid #333;
+            border-bottom: 1px solid #333;
+        }
+
+        .q-security {
+            border-bottom: 1px solid #333;
+        }
+
+        .q-success {
+            border-right: 1px solid #333;
+        }
+
+        .q-significance {}
+
+        .quad.active {
+            background: rgba(0, 255, 157, 0.2);
+            color: var(--primary);
+            font-weight: bold;
+            box-shadow: inset 0 0 20px rgba(0, 255, 157, 0.1);
+        }
+
+        /* --- CENTER (TRANSCRIPT) --- */
+        .center-view {
+            grid-column: 2;
+            grid-row: 2 / 3;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: none;
+            background: transparent;
+        }
+
+        .transcript-stream {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            line-height: 1.6;
+            mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+        }
+
+        .msg {
+            margin-bottom: 15px;
+            opacity: 0;
+            animation: fadeIn 0.3s forwards;
+        }
+
+        .msg.agent {
+            text-align: right;
+            color: var(--secondary);
+        }
+
+        .msg.prospect {
+            text-align: left;
+            color: var(--primary);
+        }
+
+        .msg-name {
+            font-size: 0.7rem;
+            opacity: 0.5;
+            margin-bottom: 2px;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* --- GOD MODE OVERLAY --- */
+        .god-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            text-align: center;
+            display: none;
+            /* Triggered by JS */
+        }
+
+        .god-text {
+            font-size: 3rem;
+            font-weight: 900;
+            color: transparent;
+            -webkit-text-stroke: 1px var(--warning);
+            text-shadow: 0 0 20px var(--warning);
+            letter-spacing: 5px;
+            animation: pulse 1s infinite alternate;
+        }
+
+        /* --- RIGHT PANEL (TACTICAL) --- */
+        .right-panel {
+            grid-row: 2 / 4;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* AMMO COUNTER */
+        .ammo-crate {
+            border: 1px solid #333;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .bullets {
+            display: flex;
+            gap: 2px;
+            flex-wrap: wrap;
+            margin-top: 5px;
+        }
+
+        .bullet {
+            width: 4px;
+            height: 12px;
+            background: var(--warning);
+            opacity: 1;
+            transition: opacity 0.2s;
+        }
+
+        .bullet.spent {
+            opacity: 0.2;
+            background: #555;
+        }
+
+        /* SENTIMENT RADAR */
+        .radar-box {
+            width: 200px;
+            height: 100px;
+            margin: 0 auto;
+            overflow: hidden;
+            position: relative;
+            border-bottom: 1px solid #444;
+        }
+
+        .radar-needle {
+            width: 2px;
+            height: 90px;
+            background: var(--primary);
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform-origin: bottom center;
+            transform: rotate(0deg);
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .radar-arc {
+            width: 180px;
+            height: 180px;
+            border: 1px dashed #333;
+            border-radius: 50%;
+            position: absolute;
+            bottom: -90px;
+            left: 10px;
+        }
+
+        /* --- BOTTOM TRAY (ALERTS) --- */
+        .bottom-tray {
+            grid-column: 2;
+            grid-row: 3;
+            background: rgba(20, 0, 0, 0.8);
+            border: 1px solid var(--danger);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .alert-box {
+            color: var(--danger);
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px var(--danger);
+            font-weight: bold;
+        }
+
+        /* CONTROLS */
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+        }
+
+        .btn-start {
+            background: var(--secondary);
+            color: #000;
+            border: none;
+            padding: 10px 30px;
+            font-weight: 900;
+            font-family: 'Chakra Petch';
+            letter-spacing: 1px;
+            cursor: pointer;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+        }
+
+        .btn-start:hover {
+            background: #fff;
+            box-shadow: 0 0 20px var(--secondary);
+        }
+
+        .btn-start.active {
+            background: var(--danger);
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- GOD OVERLAY -->
+    <div class="god-overlay" id="godMode">
+        <div class="god-text">CRITICAL OBJECTION</div>
+        <div style="color: #fff; letter-spacing: 2px; margin-top: 10px;" id="godSub">PIVOT NOW</div>
+    </div>
+
+    <div class="hud-grid">
+
+        <!-- TOP BAR -->
+        <div class="top-bar">
+            <div class="dominance-wrapper">
+                <div class="dom-label">AGENT</div>
+                <div class="tug-of-war">
+                    <div class="center-marker"></div>
+                    <div class="tug-bar tug-agent" id="domAgent"></div>
+                    <div class="tug-bar tug-prospect" id="domProspect"></div>
+                </div>
+                <div class="dom-label">PROSPECT</div>
+            </div>
+
+            <div style="margin-left: 40px; font-size: 1.2rem; font-family: 'JetBrains Mono';" id="timer">00:00</div>
+        </div>
+
+        <!-- LEFT PANEL -->
+        <div class="panel left-panel">
+            <div class="panel-header">PROSPECT PROFILE</div>
+
+            <div class="intel-item">
+                <div class="intel-lbl">Name / ID</div>
+                <div class="intel-val">Inbound Caller</div>
+            </div>
+
+            <div class="intel-item">
+                <div class="intel-lbl">PBD MINDSET MATRIX</div>
+                <div style="text-align: center; margin-top: 10px;">
+                    <div class="pbd-quadrant">
+                        <div class="quad q-survival" id="pbd-Survival">SURVIVAL</div>
+                        <div class="quad q-security" id="pbd-Security">SECURITY</div>
+                        <div class="quad q-success" id="pbd-Success">SUCCESS</div>
+                        <div class="quad q-significance" id="pbd-Significance">SIGNIFICANCE</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="intel-item">
+                <div class="intel-lbl">ATTENTION PROBABILITY</div>
+                <div class="intel-val" style="color: var(--primary); font-size: 2rem;" id="attnVal">98%</div>
+            </div>
+        </div>
+
+        <!-- CENTER VIEW -->
+        <div class="center-view">
+            <div style="text-align: center; color: #555; font-size: 0.8rem; margin-bottom: 10px;">-- LIVE TRANSCRIPT
+                FEED --</div>
+            <div class="transcript-stream" id="transcript">
+                <div style="text-align: center; margin-top: 50px; color: #444;">&lt; WAITING FOR AUDIO &gt;</div>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div class="panel right-panel">
+            <div class="panel-header">TACTICAL SYSTEMS</div>
+
+            <div class="intel-item">
+                <div class="intel-lbl">SENTIMENT RADAR</div>
+                <div class="radar-box">
+                    <div class="radar-arc"></div>
+                    <div class="radar-needle" id="sentNeedle"></div>
+                </div>
+                <div
+                    style="display: flex; justify-content: space-between; padding: 0 20px; font-size: 0.7rem; color: #666;">
+                    <span>NEG</span><span>NEU</span><span>POS</span>
+                </div>
+            </div>
+
+            <div class="intel-item">
+                <div class="intel-lbl">AMMO SUPPLY (TACTICS)</div>
+                <div class="ammo-crate">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 5px;">
+                        <span>ROUNDS</span> <span id="ammoPct">100%</span>
+                    </div>
+                    <div class="bullets" id="ammoContainer">
+                        <!-- Generate bullets -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="intel-item">
+                <div class="intel-lbl">HEALTH</div>
+                <div style="width: 100%; height: 10px; background: #333; margin-top: 5px;">
+                    <div id="healthBar"
+                        style="width: 100%; height: 100%; background: var(--primary); transition: width 0.3s; box-shadow: 0 0 10px var(--primary);">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM TRAY -->
+        <div class="panel bottom-tray">
+            <div>
+                <div style="font-size: 0.8rem; color: #666; margin-bottom: 5px;">A.I. COACHING ADVICE</div>
+                <div class="alert-box" id="coachText">MAINTAIN FRAME. LISTENING...</div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="controls">
+        <button class="btn-start" id="micBtn" onclick="toggleMic()">INITIATE SYSTEM</button>
+    </div>
+
+    <script>
+        // CONFIG
+        const API_URL = "http://localhost:47293/api/analyze/sales-call";
+
+        // SYSTEM STATE
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let isListening = false;
+        let timerInt;
+        let seconds = 0;
+        let fullTranscript = "";
+
+        // METRICS STATE
+        let ammo = 100; // 0-100
+        let dominance = 50; // 0-100 (50 is equal)
+        let health = 100;
+
+        // INIT UI
+        const ammoContainer = document.getElementById('ammoContainer');
+        for (let i = 0; i < 50; i++) {
+            let b = document.createElement('div');
+            b.className = 'bullet';
+            ammoContainer.appendChild(b);
+        }
+
+        function toggleMic() {
+            if (!SpeechRecognition) { alert("Chrome Required"); return; }
+
+            if (isListening) {
+                isListening = false;
+                recognition.stop();
+                clearInterval(timerInt);
+                document.getElementById('micBtn').innerText = "INITIATE SYSTEM";
+                document.getElementById('micBtn').classList.remove('active');
+            } else {
+                isListening = true;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+
+                recognition.onresult = processSpeech;
+                recognition.onend = () => { if (isListening) recognition.start(); };
+
+                recognition.start();
+
+                timerInt = setInterval(() => {
+                    seconds++;
+                    let m = Math.floor(seconds / 60).toString().padStart(2, '0');
+                    let s = (seconds % 60).toString().padStart(2, '0');
+                    document.getElementById('timer').innerText = `${m}:${s}`;
+                }, 1000);
+
+                document.getElementById('micBtn').innerText = "TERMINATE";
+                document.getElementById('micBtn').classList.add('active');
+                document.getElementById('transcript').innerHTML = "";
+            }
+        }
+
+        function processSpeech(event) {
+            let finalized = false;
+            let interimText = "";
+
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    let text = event.results[i][0].transcript;
+                    finalized = true;
+                    addMessage(text);
+                    fullTranscript += text + " ";
+                    analyzeAPI();
+                } else {
+                    interimText += event.results[i][0].transcript;
+                }
+            }
+        }
+
+        function addMessage(text) {
+            // Heuristic speaker detection
+            let isAgent = text.length > 50 || text.toLowerCase().includes("i ") || text.toLowerCase().includes("we ");
+            let div = document.createElement('div');
+            div.className = `msg ${isAgent ? 'agent' : 'prospect'}`;
+            div.innerHTML = `<div class="msg-name">${isAgent ? 'AGENT' : 'TARGET'}</div>${text}`;
+            let t = document.getElementById('transcript');
+            t.appendChild(div);
+            t.scrollTop = t.scrollHeight;
+        }
+
+        async function analyzeAPI() {
+            if (fullTranscript.length < 10) return;
+
+            // Visual pulse on top bar
+            document.querySelector('.top-bar').style.filter = "brightness(1.5)";
+            setTimeout(() => document.querySelector('.top-bar').style.filter = "none", 200);
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ transcript: fullTranscript })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    updateDashboard(data);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function updateDashboard(data) {
+            // 1. PBD MATRIX
+            document.querySelectorAll('.quad').forEach(q => q.classList.remove('active'));
+            if (data.pbd_mindset) {
+                let id = `pbd-${data.pbd_mindset}`; // Survival, Security, etc.
+                if (document.getElementById(id)) document.getElementById(id).classList.add('active');
+            }
+
+            // 2. DOMINANCE (Tug of War)
+            if (data.dominance_split) {
+                let ag = data.dominance_split.agent;
+                document.getElementById('domAgent').style.width = ag + '%';
+                document.getElementById('domProspect').style.width = (100 - ag) + '%';
+            }
+
+            // 3. AMMO
+            if (data.ammo_remaining !== undefined) {
+                let pct = data.ammo_remaining;
+                document.getElementById('ammoPct').innerText = pct + '%';
+                let bullets = document.querySelectorAll('.bullet');
+                let activeCount = Math.floor(pct / 2); // 50 bullets total
+                bullets.forEach((b, i) => {
+                    if (i >= activeCount) b.classList.add('spent');
+                    else b.classList.remove('spent');
+                });
+            }
+
+            // 4. SENTIMENT NEEDLE (-90 to 90 deg)
+            if (data.sentiment === 'positive') setRadar(45);
+            else if (data.sentiment === 'negative') setRadar(-45);
+            else setRadar(0);
+
+            // 5. ATTENTION
+            if (data.attention_probability) {
+                document.getElementById('attnVal').innerText = data.attention_probability + '%';
+                // Color scaling
+                let col = data.attention_probability > 70 ? 'var(--primary)' :
+                    data.attention_probability > 40 ? 'var(--warning)' : 'var(--danger)';
+                document.getElementById('attnVal').style.color = col;
+            }
+
+            // 6. HEALTH
+            if (data.health_level) {
+                document.getElementById('healthBar').style.width = data.health_level + "%";
+            }
+
+            // 7. COACHING
+            if (data.coaching_tip) {
+                document.getElementById('coachText').innerText = data.coaching_tip.toUpperCase();
+            }
+            if (data.detected_objections && data.detected_objections.length > 0) {
+                document.getElementById('coachText').innerText = "⚠️ OBJECTION: " + data.detected_objections[0].toUpperCase();
+                document.getElementById('coachText').style.color = "var(--danger)";
+            } else {
+                document.getElementById('coachText').style.color = "var(--secondary)";
+            }
+        }
+
+        function setRadar(deg) {
+            document.getElementById('sentNeedle').style.transform = `translateX(-50%) rotate(${deg}deg)`;
+        }
+
+    </script>
+</body>
+
+</html>

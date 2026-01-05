@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD v10 - NEON COMMANDER</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700&family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --bg-dark: #0b0f19;
+            --panel-bg: rgba(16, 24, 40, 0.85);
+            --border-blue: #00aaff;
+            --border-glow: 0 0 10px rgba(0, 170, 255, 0.4);
+            --neon-green: #00ff9d;
+            --neon-red: #ff3366;
+            --neon-cyan: #00eaff;
+            --text-main: #e0faff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Exo 2', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: radial-gradient(circle at 50% 50%, #1a2639 0%, #05080a 100%);
+        }
+
+        /* --- MAIN CONTAINER --- */
+        .hud-frame {
+            width: 98vw;
+            height: 95vh;
+            border: 2px solid var(--border-blue);
+            border-radius: 20px;
+            box-shadow: inset 0 0 50px rgba(0, 170, 255, 0.2);
+            position: relative;
+            display: grid;
+            grid-template-columns: 350px 1fr 350px;
+            grid-template-rows: 100px 1fr 180px;
+            gap: 15px;
+            padding: 20px;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 170, 255, 0.05) 100%);
+        }
+
+        /* Frame Corners */
+        .hud-frame::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            width: 50px;
+            height: 50px;
+            border-top: 4px solid var(--neon-cyan);
+            border-left: 4px solid var(--neon-cyan);
+            border-radius: 20px 0 0 0;
+        }
+
+        .hud-frame::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 50px;
+            height: 50px;
+            border-bottom: 4px solid var(--neon-cyan);
+            border-right: 4px solid var(--neon-cyan);
+            border-radius: 0 0 20px 0;
+        }
+
+        /* --- PANELS --- */
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 170, 255, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .lbl-sec {
+            color: var(--neon-cyan);
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(0, 170, 255, 0.2);
+            padding-bottom: 4px;
+        }
+
+        /* --- TOP BAR (CONFIDENCE & INTEL) --- */
+        .top-deck {
+            grid-column: 1 / 4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .confidence-strip {
+            width: 60%;
+            text-align: center;
+        }
+
+        .conf-title {
+            font-size: 0.8rem;
+            color: #fff;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+
+        .bar-track {
+            height: 24px;
+            background: #111;
+            border: 1px solid #444;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .bar-segment {
+            flex: 1;
+            border-right: 1px solid #000;
+            opacity: 0.2;
+            background: linear-gradient(90deg, #00ff9d, #00aaff);
+            transition: opacity 0.3s;
+        }
+
+        .bar-segment.risk {
+            background: var(--neon-red);
+        }
+
+        .bar-segment.active {
+            opacity: 1;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .conf-score {
+            font-size: 1.5rem;
+            color: var(--neon-green);
+            font-weight: 700;
+            text-shadow: 0 0 10px var(--neon-green);
+            margin-top: 5px;
+        }
+
+        /* --- LEFT PANEL --- */
+        .col-left {
+            grid-row: 2 / 4;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .avatar-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid var(--neon-cyan);
+            background: #222;
+            margin: 0 auto 10px;
+            display: grid;
+            place-items: center;
+            font-size: 2rem;
+            box-shadow: 0 0 15px rgba(0, 234, 255, 0.3);
+        }
+
+        .profile-stat {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 4px;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+            padding-bottom: 2px;
+        }
+
+        .profile-stat span:last-child {
+            color: var(--neon-green);
+        }
+
+        .social-feed {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .social-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 0.75rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .so-thumb {
+            width: 40px;
+            height: 40px;
+            background: #333;
+            border-radius: 4px;
+            background-size: cover;
+        }
+
+        .so-text {
+            color: #ccc;
+        }
+
+        .so-hl {
+            color: var(--neon-green);
+            font-weight: bold;
+        }
+
+        /* --- CENTER PANEL --- */
+        .col-center {
+            grid-row: 2 / 3;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* EMOTIONAL DRIFT GAUGE */
+        .drift-gauge-box {
+            height: 180px;
+            position: relative;
+            background: radial-gradient(circle at bottom, rgba(0, 234, 255, 0.1) 0%, transparent 70%);
+            border-bottom: 1px solid var(--border-blue);
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 20px;
+        }
+
+        .arch-img {
+            width: 300px;
+            height: 150px;
+            border-top-left-radius: 150px;
+            border-top-right-radius: 150px;
+            border: 10px solid #222;
+            border-bottom: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .arch-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: conic-gradient(from 270deg, var(--neon-red) 0deg, var(--neon-cyan) 90deg, var(--neon-green) 180deg);
+            opacity: 0.5;
+        }
+
+        .needle {
+            width: 4px;
+            height: 140px;
+            background: #fff;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform-origin: bottom center;
+            transform: rotate(0deg);
+            /* -90 to 90 */
+            transition: transform 0.8s ease;
+            box-shadow: 0 0 10px #fff;
+            z-index: 10;
+        }
+
+        .terminal-box {
+            flex: 1;
+            background: #000;
+            border: 1px solid var(--border-blue);
+            font-family: 'Share Tech Mono', monospace;
+            padding: 15px;
+            overflow-y: auto;
+            color: var(--neon-cyan);
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .term-ln {
+            margin-bottom: 8px;
+        }
+
+        .term-ln.user {
+            color: var(--neon-green);
+        }
+
+        .term-ln.sys {
+            color: var(--neon-red);
+        }
+
+        /* --- RIGHT PANEL --- */
+        .col-right {
+            grid-row: 2 / 4;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .stat-bar {
+            height: 6px;
+            background: #222;
+            margin-top: 4px;
+            border-radius: 3px;
+        }
+
+        .stat-fill {
+            height: 100%;
+            background: var(--neon-cyan);
+            width: 50%;
+            box-shadow: 0 0 8px var(--neon-cyan);
+        }
+
+        .ammo-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 2px;
+            margin-top: 5px;
+        }
+
+        .ammo-shell {
+            height: 15px;
+            background: var(--neon-cyan);
+            opacity: 1;
+        }
+
+        .ammo-shell.spent {
+            background: #333;
+            opacity: 0.3;
+        }
+
+        .coach-box {
+            border-left: 3px solid var(--neon-green);
+            padding-left: 10px;
+            margin-top: 10px;
+        }
+
+        .coach-suggestion {
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .coach-reason {
+            color: #888;
+            font-size: 0.7rem;
+        }
+
+        /* --- BOTTOM PANEL --- */
+        .bottom-deck {
+            grid-column: 2 / 3;
+            grid-row: 3;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .dom-strip {
+            display: flex;
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+
+        .ds-agent {
+            background: var(--border-blue);
+            width: 50%;
+            display: grid;
+            place-items: center;
+            font-size: 0.6rem;
+            color: #000;
+            font-weight: bold;
+        }
+
+        .ds-client {
+            background: var(--neon-red);
+            width: 50%;
+            display: grid;
+            place-items: center;
+            font-size: 0.6rem;
+            color: #000;
+            font-weight: bold;
+        }
+
+        .provocation-engine {
+            background: rgba(255, 51, 102, 0.1);
+            border: 1px solid var(--neon-red);
+            padding: 10px;
+            text-align: center;
+            border-radius: 6px;
+        }
+
+        .pe-title {
+            color: var(--neon-red);
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            letter-spacing: 2px;
+        }
+
+        .pe-text {
+            font-size: 1.1rem;
+            color: #fff;
+        }
+
+        .control-strip {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .hud-btn {
+            background: transparent;
+            border: 1px solid var(--border-blue);
+            color: var(--border-blue);
+            padding: 5px 15px;
+            font-family: 'Share Tech Mono';
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .hud-btn:hover {
+            background: var(--border-blue);
+            color: #000;
+        }
+
+        .hud-btn.active {
+            background: var(--neon-green);
+            color: #000;
+            border-color: var(--neon-green);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="hud-frame">
+
+        <!-- TOP -->
+        <div class="top-deck">
+            <div class="confidence-strip">
+                <div class="conf-title">CLOSING CONFIDENCE INTERVAL</div>
+                <div class="bar-track" id="confTrack">
+                    <!-- JS will populate segments -->
+                </div>
+                <div class="conf-score" id="confScore">78% LIKELY TO CLOSE</div>
+            </div>
+        </div>
+
+        <!-- LEFT -->
+        <div class="col-left panel">
+            <div class="lbl-sec">LEAD PROFILE & SOCIAL</div>
+
+            <div class="avatar-circle">👨‍💼</div>
+            <div class="profile-stat"><span>MOOD:</span> <span>OPEN</span></div>
+            <div class="profile-stat"><span>PERSONALITY:</span> <span id="pbdDisplay">ANALYZING...</span></div>
+            <div class="profile-stat"><span>INTERESTS:</span> <span>Motorcycles, Boats</span></div>
+
+            <div class="lbl-sec" style="margin-top: 20px;">SOCIAL MEDIA HIGHLIGHTS</div>
+            <div class="social-feed">
+                <div class="social-item">
+                    <div class="so-thumb" style="background-color: #444;"></div>
+                    <div class="so-text">"Just bought a new Ducati..." <span class="so-hl">ENTHUSIASTIC</span></div>
+                </div>
+                <div class="social-item">
+                    <div class="so-thumb" style="background-color: #335;"></div>
+                    <div class="so-text">"Family health scare..." <span class="so-hl">EMPATHY REQ</span></div>
+                </div>
+            </div>
+
+            <div class="lbl-sec" style="margin-top: 20px;">PRELIMINARY ASSESSMENT</div>
+            <div class="profile-stat"><span>RELAXED:</span> <span style="color:var(--neon-green)">HIGH</span></div>
+            <div class="profile-stat"><span>INTELLIGENT:</span> <span style="color:var(--neon-cyan)">MEDIUM</span></div>
+            <div class="profile-stat"><span>Detail Fixated:</span> <span style="color:var(--neon-red)">LOW</span></div>
+        </div>
+
+        <!-- CENTER -->
+        <div class="col-center">
+            <!-- EMOTIONAL DRIFT -->
+            <div class="panel" style="padding:0; background:none; border:none;">
+                <div style="text-align:center; font-size:0.8rem; color:var(--neon-cyan); margin-bottom:5px;">EMOTIONAL
+                    DRIFT</div>
+                <div class="drift-gauge-box">
+                    <div class="arch-img">
+                        <div class="arch-fill"></div>
+                    </div>
+                    <div class="needle" id="emotionNeedle"></div>
+                    <div style="position: absolute; bottom: 10px; font-size: 1.2rem; font-weight: bold; color: #fff;"
+                        id="emotionLabel">NEUTRAL</div>
+                </div>
+            </div>
+
+            <!-- LIVE ENGAGEMENT (Transcript) -->
+            <div class="panel terminal-box" id="transcript">
+                <div class="term-ln sys">>> SYSTEM INITIALIZED.</div>
+                <div class="term-ln sys">>> WAITING FOR VOICE DATA...</div>
+            </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="col-right panel">
+            <div class="lbl-sec">AGENT PERFORMANCE & STATS</div>
+
+            <div style="font-size:0.7rem; color:#888;">AMMO (TALKING POINTS: <span id="ammoCount">20</span>)</div>
+            <div class="ammo-grid" id="ammoGrid"></div>
+
+            <div class="lbl-sec" style="margin-top: 20px;">MINI-MAP</div>
+            <div class="profile-stat"><span>STAGE:</span> <span style="color:var(--neon-green)">PITCHING</span></div>
+            <div class="profile-stat"><span>QUESTIONS:</span> <span id="qCount">0</span></div>
+
+            <div class="lbl-sec" style="margin-top: 20px;">LIVE AGENT RATING</div>
+            <div class="profile-stat"><span>DELIVERY:</span> <span style="color:var(--neon-green)">ENGAGING</span></div>
+            <div class="profile-stat"><span>SPEED:</span> <span id="wpmLabel">OPTIMAL</span></div>
+
+            <div class="lbl-sec" style="margin-top: 20px;">COACHING CORNER</div>
+            <div class="coach-box">
+                <div class="coach-suggestion" id="coachText">SPEAK SLOWER, ENGAGE MORE</div>
+                <div class="coach-reason" id="coachReason">Opportunity: Insert Logic Here</div>
+            </div>
+        </div>
+
+        <!-- BOTTOM -->
+        <div class="bottom-deck panel">
+            <div class="lbl-sec">CALL DOMINANCE</div>
+            <div class="dom-strip">
+                <div class="ds-agent" id="domAgent">AGENT 50%</div>
+                <div class="ds-client" id="domClient">CLIENT 50%</div>
+            </div>
+
+            <div class="provocation-engine">
+                <div class="pe-title">PROVOCATION ENGINE</div>
+                <div class="pe-text" id="provocText">ASK "ARE YOU STILL THERE?" TO RE-ENGAGE</div>
+            </div>
+
+            <div class="control-strip">
+                <div style="font-size:0.8rem; color:#888; align-self:center;">SINCE LEAD SPOKE: <span id="silenceTimer"
+                        style="color:#fff">0:00</span></div>
+                <button class="hud-btn" id="micBtn" onclick="toggleMic()">ACTIVATE HUD</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:47293/api/analyze/sales-call";
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let isListening = false;
+        let fullTranscript = "";
+        let agentWords = 0;
+        let prospectWords = 0;
+
+        // UI SETUP
+        const confTrack = document.getElementById('confTrack');
+        for (let i = 0; i < 20; i++) {
+            let div = document.createElement('div');
+            div.className = 'bar-segment';
+            if (i > 15) div.className += ' risk';
+            confTrack.appendChild(div);
+        }
+
+        const ammoGrid = document.getElementById('ammoGrid');
+        for (let i = 0; i < 20; i++) {
+            let div = document.createElement('div');
+            div.className = 'ammo-shell';
+            ammoGrid.appendChild(div);
+        }
+
+        // SILENCE TIMER
+        let silenceSec = 0;
+        setInterval(() => {
+            if (isListening) {
+                silenceSec++;
+                let m = Math.floor(silenceSec / 60);
+                let s = (silenceSec % 60).toString().padStart(2, '0');
+                document.getElementById('silenceTimer').innerText = `${m}:${s}`;
+                if (silenceSec > 10) document.getElementById('silenceTimer').style.color = 'var(--neon-red)';
+            }
+        }, 1000);
+
+        function toggleMic() {
+            if (!SpeechRecognition) { alert("Chrome Required"); return; }
+            const btn = document.getElementById('micBtn');
+
+            if (isListening) {
+                isListening = false;
+                recognition.stop();
+                btn.classList.remove('active');
+                btn.innerText = "ACTIVATE HUD";
+            } else {
+                isListening = true;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.onresult = processSpeech;
+                recognition.onend = () => { if (isListening) recognition.start(); };
+                recognition.start();
+                btn.classList.add('active');
+                btn.innerText = "ONLINE";
+            }
+        }
+
+        function processSpeech(event) {
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    let text = event.results[i][0].transcript;
+                    fullTranscript += text + " ";
+                    silenceSec = 0; // Reset silence
+                    document.getElementById('silenceTimer').style.color = '#fff';
+
+                    // Display in terminal
+                    let div = document.createElement('div');
+                    div.className = 'term-ln user';
+                    div.innerText = `> ${text}`;
+                    document.getElementById('transcript').appendChild(div);
+                    document.getElementById('transcript').scrollTop = document.getElementById('transcript').scrollHeight;
+
+                    // Simple Stats
+                    let w = text.split(' ').length;
+                    if (text.length > 40) agentWords += w; else prospectWords += w;
+                    updateDominance();
+
+                    // API Call
+                    callBrain();
+                }
+            }
+        }
+
+        function updateDominance() {
+            let total = agentWords + prospectWords;
+            if (total < 1) return;
+            let agentPct = Math.floor((agentWords / total) * 100);
+            document.getElementById('domAgent').style.width = agentPct + '%';
+            document.getElementById('domAgent').innerText = `AGENT ${agentPct}%`;
+            document.getElementById('domClient').style.width = (100 - agentPct) + '%';
+            document.getElementById('domClient').innerText = `CLIENT ${(100 - agentPct)}%`;
+        }
+
+        async function callBrain() {
+            if (fullTranscript.length < 15) return;
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ transcript: fullTranscript })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    renderData(data);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function renderData(data) {
+            // Confidence Bar
+            if (data.confidence_score) {
+                document.getElementById('confScore').innerText = `${data.confidence_score}% LIKELY TO CLOSE`;
+                let segs = document.querySelectorAll('.bar-segment');
+                let filled = Math.floor((data.confidence_score / 100) * 20);
+                segs.forEach((s, i) => {
+                    s.classList.toggle('active', i < filled);
+                });
+            }
+
+            // Emotion Needle (-90 to 90)
+            if (data.sentiment === 'positive') setNeedle(45, "POSITIVE");
+            else if (data.sentiment === 'negative') setNeedle(-45, "NEGATIVE");
+            else setNeedle(0, "NEUTRAL");
+
+            // Mindset PBD
+            if (data.pbd_mindset) {
+                document.getElementById('pbdDisplay').innerText = data.pbd_mindset.toUpperCase();
+                document.getElementById('pbdDisplay').style.color = "var(--neon-green)";
+            }
+
+            // Ammo
+            if (data.ammo_remaining) {
+                let count = Math.ceil((data.ammo_remaining / 100) * 20);
+                document.getElementById('ammoCount').innerText = count;
+                let shells = document.querySelectorAll('.ammo-shell');
+                shells.forEach((s, i) => {
+                    s.classList.toggle('spent', i >= count);
+                });
+            }
+
+            // Coaching/Provocation
+            if (data.coaching_tip) {
+                document.getElementById('coachText').innerText = data.coaching_tip.toUpperCase();
+            }
+            if (data.smart_prompt) {
+                document.getElementById('provocText').innerText = data.smart_prompt.toUpperCase();
+                document.getElementById('provocText').style.color = "var(--neon-cyan)";
+            }
+        }
+
+        function setNeedle(deg, lbl) {
+            document.getElementById('emotionNeedle').style.transform = `rotate(${deg}deg)`;
+            document.getElementById('emotionLabel').innerText = lbl;
+        }
+
+    </script>
+
+</body>
+
+</html>

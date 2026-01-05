@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD v13 - MAX DENSITY</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;600;800&display=swap');
+
+        :root {
+            --bg-hex: #050505;
+            --panel-hex: #0a0a0a;
+            --border-dim: #333;
+            --border-bright: #555;
+            --accent-primary: #00ffcc;
+            /* Cyber Teal */
+            --accent-warn: #ffcc00;
+            /* Ind. Yellow */
+            --accent-alert: #ff0055;
+            /* Tac. Red */
+            --accent-sec: #0088ff;
+            /* Data Blue */
+            --text-main: #eee;
+            --text-dim: #666;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scrollbar-width: none;
+        }
+
+        ::-webkit-scrollbar {
+            width: 0;
+        }
+
+        body {
+            background-color: var(--bg-hex);
+            color: var(--text-main);
+            font-family: 'JetBrains Mono', monospace;
+            height: 100vh;
+            overflow: hidden;
+            font-size: 12px;
+            /* Dense Grid BG */
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 10px 10px;
+        }
+
+        /* --- LAYOUT --- */
+        .viewport {
+            width: 100vw;
+            height: 100vh;
+            display: grid;
+            grid-template-columns: 350px 1fr 400px;
+            grid-template-rows: 60px 1fr 200px;
+            gap: 2px;
+            padding: 2px;
+            background: #111;
+        }
+
+        /* --- MODULE STYLES --- */
+        .module {
+            background: var(--panel-hex);
+            border: 1px solid var(--border-dim);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .module::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--accent-sec);
+            opacity: 0.3;
+        }
+
+        .mod-header {
+            background: #111;
+            border-bottom: 1px solid var(--border-dim);
+            padding: 6px 10px;
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--accent-sec);
+            display: flex;
+            justify-content: space-between;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .mod-header .h-right {
+            color: var(--text-dim);
+        }
+
+        .mod-body {
+            flex: 1;
+            padding: 10px;
+            overflow-y: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- VISUALIZERS --- */
+
+        /* Audio Spectrogram */
+        .spectro-rail {
+            display: flex;
+            align-items: flex-end;
+            gap: 1px;
+            height: 40px;
+            width: 100%;
+            margin-bottom: 5px;
+            border-bottom: 1px dashed #333;
+        }
+
+        .spec-bar {
+            flex: 1;
+            background: var(--accent-sec);
+            opacity: 0.5;
+            transition: height 0.1s;
+        }
+
+        /* Data Waterfall */
+        .waterfall {
+            font-size: 9px;
+            color: #444;
+            line-height: 1.2;
+            overflow: hidden;
+            height: 100%;
+            white-space: nowrap;
+        }
+
+        /* Sparklines */
+        .spark-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .micro-chart {
+            height: 30px;
+            border: 1px solid #222;
+            background: linear-gradient(90deg, transparent 90%, var(--accent-primary) 100%);
+            position: relative;
+        }
+
+        .micro-line {
+            position: absolute;
+            bottom: 50%;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: var(--text-dim);
+        }
+
+        /* --- HEADER ROW --- */
+        .top-strip {
+            grid-column: 1 / 4;
+            background: #080808;
+            border-bottom: 1px solid var(--border-dim);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            justify-content: space-between;
+        }
+
+        .sys-brand {
+            color: #fff;
+            font-weight: 800;
+            font-size: 16px;
+            letter-spacing: -1px;
+        }
+
+        .sys-brand span {
+            color: var(--accent-primary);
+        }
+
+        .global-conf {
+            flex: 1;
+            max-width: 600px;
+            margin: 0 30px;
+        }
+
+        .conf-bar-housing {
+            height: 12px;
+            background: #222;
+            border: 1px solid #444;
+            display: flex;
+        }
+
+        .conf-seg {
+            flex: 1;
+            margin-right: 1px;
+            background: #333;
+            transition: background 0.3s;
+        }
+
+        .conf-seg.on {
+            background: var(--accent-primary);
+            box-shadow: 0 0 5px var(--accent-primary);
+        }
+
+        /* --- LEFT COL (INTEL) --- */
+        .left-col {
+            grid-row: 2 / 4;
+            display: grid;
+            grid-template-rows: 250px 1fr 200px;
+            gap: 2px;
+        }
+
+        .avatar-hex {
+            width: 80px;
+            height: 80px;
+            background: #222;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            margin: 10px auto;
+            display: grid;
+            place-items: center;
+            border: 2px solid var(--accent-sec);
+            font-size: 24px;
+            color: #fff;
+        }
+
+        .dense-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+        }
+
+        .dense-table td {
+            padding: 4px;
+            border-bottom: 1px solid #222;
+        }
+
+        .dense-table .lbl {
+            color: #666;
+        }
+
+        .dense-table .val {
+            color: var(--accent-primary);
+            text-align: right;
+        }
+
+        .mindset-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px;
+            height: 100px;
+            margin-top: 10px;
+        }
+
+        .ms-cell {
+            background: #151515;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            font-size: 9px;
+            color: #444;
+            border: 1px solid #222;
+            transition: all 0.3s;
+        }
+
+        .ms-cell.active {
+            background: var(--accent-primary);
+            color: #000;
+            font-weight: 800;
+        }
+
+        /* --- CENTER MAIN --- */
+        .center-stage {
+            grid-row: 2 / 3;
+            display: grid;
+            grid-template-rows: 200px 1fr;
+            gap: 2px;
+        }
+
+        .viz-deck {
+            background: var(--panel-hex);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            padding: 20px;
+            align-items: center;
+        }
+
+        .circle-stat {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid #222;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .circle-stat::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 4px solid var(--accent-sec);
+            border-right-color: transparent;
+            border-bottom-color: transparent;
+            transform: rotate(-45deg);
+        }
+
+        .stat-big {
+            font-size: 32px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .stat-sub {
+            font-size: 10px;
+            color: #666;
+        }
+
+        .term-container {
+            font-family: 'JetBrains Mono';
+            font-size: 11px;
+            padding: 10px;
+            background: #080808;
+            overflow-y: auto;
+            border-top: 1px solid #333;
+        }
+
+        .log-ln {
+            margin-bottom: 4px;
+            border-left: 2px solid #333;
+            padding-left: 8px;
+        }
+
+        .log-ln.ag {
+            border-color: var(--accent-sec);
+            color: #ccc;
+        }
+
+        .log-ln.cl {
+            border-color: var(--accent-alert);
+            color: #fff;
+        }
+
+        /* --- RIGHT COL (TACTICS) --- */
+        .right-col {
+            grid-row: 2 / 4;
+            display: grid;
+            grid-template-rows: 200px 1fr 150px;
+            gap: 2px;
+        }
+
+        .ammo-matrix {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 2px;
+            padding: 10px;
+        }
+
+        .bullet-sq {
+            height: 15px;
+            background: var(--accent-warn);
+            opacity: 1;
+            transition: opacity 0.2s;
+        }
+
+        .bullet-sq.spent {
+            opacity: 0.2;
+        }
+
+        .map-wrapper {
+            background:
+                linear-gradient(rgba(0, 255, 204, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 204, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            flex: 1;
+            position: relative;
+        }
+
+        .trace-path {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #333;
+        }
+
+        .trace-dot {
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border: 2px solid var(--accent-primary);
+            border-radius: 50%;
+            position: absolute;
+            top: -5px;
+            left: 10%;
+            box-shadow: 0 0 10px var(--accent-primary);
+            transition: left 0.5s;
+        }
+
+        /* --- BOTTOM DECK --- */
+        .bottom-deck {
+            grid-column: 2 / 3;
+            grid-row: 3;
+            background: #111;
+            display: grid;
+            grid-template-columns: 200px 1fr 200px;
+            gap: 2px;
+        }
+
+        .dom-panel {
+            background: var(--panel-hex);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .split-bar {
+            height: 20px;
+            display: flex;
+            border: 1px solid #444;
+        }
+
+        .sb-ag {
+            width: 50%;
+            background: var(--accent-sec);
+            opacity: 0.8;
+        }
+
+        .sb-cl {
+            width: 50%;
+            background: var(--accent-warn);
+            opacity: 0.8;
+        }
+
+        .prov-panel {
+            background: #1a0a0a;
+            border: 1px solid var(--accent-alert);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            flex-direction: column;
+        }
+
+        .prov-main {
+            font-size: 18px;
+            color: #fff;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .prov-lbl {
+            color: var(--accent-alert);
+            font-size: 10px;
+            letter-spacing: 2px;
+        }
+
+        .mic-panel {
+            background: var(--panel-hex);
+            display: grid;
+            place-items: center;
+        }
+
+        .mic-toggle {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            color: var(--accent-sec);
+            font-weight: 800;
+            font-family: 'JetBrains Mono';
+            cursor: pointer;
+            border: 2px solid #222;
+        }
+
+        .mic-toggle:hover {
+            background: #222;
+        }
+
+        .mic-toggle.active {
+            background: var(--accent-primary);
+            color: #000;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="viewport">
+
+        <!-- HEADER -->
+        <div class="top-strip">
+            <div class="sys-brand">VITAL<span>RX</span> // GOD_MODE_v13</div>
+
+            <div class="global-conf">
+                <div
+                    style="display:flex; justify-content:space-between; font-size:10px; color:#666; margin-bottom:2px;">
+                    <span>CONFIDENCE INTERVAL</span>
+                    <span id="confTxt">0%</span>
+                </div>
+                <div class="conf-bar-housing" id="confBar"></div>
+            </div>
+
+            <div style="font-size:14px; color:#fff;" id="timer">00:00:00</div>
+        </div>
+
+        <!-- LEFT COL -->
+        <div class="module left-col">
+            <div class="mod-header"><span>TARGET_PROFILE</span> <span class="h-right">LIVE_FEED</span></div>
+            <div class="mod-body">
+                <div class="avatar-hex">ID</div>
+
+                <table class="dense-table">
+                    <tr>
+                        <td class="lbl">NAME</td>
+                        <td class="val">Analyzing...</td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">BUSINESS</td>
+                        <td class="val">Tech/SaaS</td>
+                    </tr>
+                    <tr>
+                        <td class="lbl">INTENT</td>
+                        <td class="val" id="intentVal">--</td>
+                    </tr>
+                </table>
+
+                <div style="margin-top:15px; font-size:10px; color:#666;">MINDSET_MATRIX</div>
+                <div class="mindset-grid">
+                    <div class="ms-cell" id="ms-survival">SURVIVAL</div>
+                    <div class="ms-cell" id="ms-security">SECURITY</div>
+                    <div class="ms-cell" id="ms-success">SUCCESS</div>
+                    <div class="ms-cell" id="ms-significance">SIGNIF.</div>
+                </div>
+
+                <div style="flex:1; margin-top:10px; border-top:1px solid #333; padding-top:5px;">
+                    <div style="font-size:10px; color:#666; margin-bottom:5px;">DATA_WATERFALL</div>
+                    <div class="waterfall" id="binFall">
+                        <!-- JS Fills -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER MAIN -->
+        <div class="center-stage">
+
+            <!-- VISUALIZERS -->
+            <div class="module">
+                <div class="mod-header"><span>TELEMETRY_MAIN</span> <span class="h-right">HZ: 60</span></div>
+                <div class="mod-body" style="padding:0;">
+                    <div class="viz-deck">
+                        <div class="circle-stat">
+                            <div class="stat-big" id="engScore">--</div>
+                            <div class="stat-sub">ENGAGEMENT</div>
+                        </div>
+                        <div class="circle-stat" style="border-color:var(--accent-warn);">
+                            <div class="stat-big" id="sentScore" style="color:var(--accent-warn)">--</div>
+                            <div class="stat-sub">SENTIMENT</div>
+                        </div>
+
+                        <div style="height:100%; display:flex; flex-direction:column; justify-content:center; gap:5px;">
+                            <div style="font-size:10px; color:#666;">VOICE_SPECTRO</div>
+                            <div class="spectro-rail" id="spectro"></div>
+                            <div style="font-size:10px; color:#666;">NET_TRAFFIC</div>
+                            <div class="micro-chart"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TRANSCRIPT -->
+            <div class="module">
+                <div class="mod-header"><span>TRANSCRIPT_LOG</span> <span class="h-right">REC_ON</span></div>
+                <div class="mod-body" style="padding:0;">
+                    <div class="term-container" id="terminal">
+                        <div style="color:#666;">> SYSTEM_READY...</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT COL -->
+        <div class="module right-col">
+            <div class="mod-header"><span>TACTICAL_INV</span> <span class="h-right">QTY: <span
+                        id="ammoCount">50</span></span></div>
+            <div class="mod-body">
+                <div class="ammo-matrix" id="ammoGrid"></div>
+
+                <div style="margin-top:10px; border-top:1px solid #333; padding-top:10px;">
+                    <div style="font-size:10px; color:#666; margin-bottom:5px;">SALES_ORBIT</div>
+                    <div style="height:60px; border:1px solid #333; display:flex;" class="map-wrapper">
+                        <div class="trace-path"></div>
+                        <div class="trace-dot" id="mapDot"></div>
+                        <div style="position:absolute; bottom:2px; left:2px; font-size:9px; color:var(--accent-primary);"
+                            id="stageLbl">DISCOVERY</div>
+                    </div>
+                </div>
+
+                <div style="flex:1; display:flex; flex-direction:column; justify-content:end; margin-top:10px;">
+                    <div style="background:#111; padding:8px; border-left:2px solid var(--accent-sec);">
+                        <div style="font-size:9px; color:#666;">COACH_LINK</div>
+                        <div style="color:#fff; font-weight:700;" id="coachText">STANDBY</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM DECK -->
+        <div class="bottom-deck">
+            <div class="dom-panel">
+                <div style="display:flex; justify-content:space-between; font-size:9px; color:#888; margin-bottom:2px;">
+                    <span>AGENT</span> <span>TARGET</span>
+                </div>
+                <div class="split-bar">
+                    <div class="sb-ag" id="barAg"></div>
+                    <div class="sb-cl" id="barCl"></div>
+                </div>
+            </div>
+
+            <div class="prov-panel">
+                <div class="prov-lbl">PROVOCATION_ENGINE</div>
+                <div class="prov-main" id="provText">MAINTAIN CURRENT FRAME</div>
+            </div>
+
+            <div class="mic-panel">
+                <button class="mic-toggle" id="micBtn" onclick="toggleMic()">INIT_SESSION</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:47293/api/analyze/sales-call";
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let isListening = false;
+        let fullTranscript = "";
+        let sec = 0;
+        let tInt;
+
+        // UI INIT
+        const confBar = document.getElementById('confBar');
+        for (let i = 0; i < 40; i++) {
+            let d = document.createElement('div');
+            d.className = 'conf-seg';
+            confBar.appendChild(d);
+        }
+
+        const ammoGrid = document.getElementById('ammoGrid');
+        for (let i = 0; i < 50; i++) {
+            let d = document.createElement('div');
+            d.className = 'bullet-sq';
+            ammoGrid.appendChild(d);
+        }
+
+        const spectro = document.getElementById('spectro');
+        for (let i = 0; i < 15; i++) {
+            let d = document.createElement('div');
+            d.className = 'spec-bar';
+            d.style.height = Math.random() * 100 + "%";
+            spectro.appendChild(d);
+        }
+        // Animate Spectro
+        setInterval(() => {
+            const bars = document.querySelectorAll('.spec-bar');
+            bars.forEach(b => {
+                b.style.height = Math.random() * 80 + 20 + "%";
+            });
+        }, 100);
+
+        // Waterfall Data
+        setInterval(() => {
+            const bin = document.getElementById('binFall');
+            const hex = Math.random().toString(16).substr(2, 8).toUpperCase();
+            bin.innerHTML = `<div>0x${hex} :: PACKET_IN :: ${Date.now()}</div>` + bin.innerHTML;
+            if (bin.children.length > 15) bin.lastChild.remove();
+        }, 200);
+
+        function toggleMic() {
+            if (!SpeechRecognition) { alert("Chrome Req"); return; }
+            const b = document.getElementById('micBtn');
+
+            if (isListening) {
+                isListening = false;
+                recognition.stop();
+                clearInterval(tInt);
+                b.classList.remove('active');
+                b.innerText = "INIT_SESSION";
+            } else {
+                isListening = true;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.onresult = proc;
+                recognition.onend = () => { if (isListening) recognition.start(); };
+                recognition.start();
+                b.classList.add('active');
+                b.innerText = "TERMINATE";
+
+                tInt = setInterval(() => {
+                    sec++;
+                    let h = Math.floor(sec / 3600).toString().padStart(2, '0');
+                    let m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
+                    let s = (sec % 60).toString().padStart(2, '0');
+                    document.getElementById('timer').innerText = `${h}:${m}:${s}`;
+                }, 1000);
+            }
+        }
+
+        function proc(e) {
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+                if (e.results[i].isFinal) {
+                    let txt = e.results[i][0].transcript;
+                    fullTranscript += txt + " ";
+
+                    // Term Log
+                    let div = document.createElement('div');
+                    div.className = txt.length > 40 ? 'log-ln ag' : 'log-ln cl';
+                    div.innerText = txt;
+                    let t = document.getElementById('terminal');
+                    t.appendChild(div);
+                    t.scrollTop = t.scrollHeight;
+
+                    apiCall();
+                }
+            }
+        }
+
+        async function apiCall() {
+            if (fullTranscript.length < 10) return;
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ transcript: fullTranscript })
+                });
+                const data = await res.json();
+                if (data.success) render(data);
+            } catch (e) { }
+        }
+
+        function render(data) {
+            // Conf
+            if (data.confidence_score) {
+                let p = data.confidence_score;
+                document.getElementById('confTxt').innerText = p + "%";
+                let on = Math.floor((p / 100) * 40);
+                document.querySelectorAll('.conf-seg').forEach((s, i) => {
+                    if (i < on) s.classList.add('on'); else s.classList.remove('on');
+                });
+                // Map
+                document.getElementById('mapDot').style.left = (10 + p * 0.8) + "%";
+                if (p > 50) document.getElementById('stageLbl').innerText = "PITCHING";
+                if (p > 80) document.getElementById('stageLbl').innerText = "CLOSING";
+            }
+
+            // Mindset (PBD)
+            if (data.pbd_mindset) {
+                document.querySelectorAll('.ms-cell').forEach(c => c.classList.remove('active'));
+                if (document.getElementById(`ms-${data.pbd_mindset}`)) {
+                    document.getElementById(`ms-${data.pbd_mindset}`).classList.add('active');
+                }
+            }
+
+            // Eng/Sent
+            if (data.health_level) document.getElementById('engScore').innerText = data.health_level;
+            if (data.sentiment == 'positive') {
+                document.getElementById('sentScore').innerText = "POS";
+                document.getElementById('sentScore').style.color = "var(--accent-primary)";
+            } else if (data.sentiment == 'negative') {
+                document.getElementById('sentScore').innerText = "NEG";
+                document.getElementById('sentScore').style.color = "var(--accent-alert)";
+            } else {
+                document.getElementById('sentScore').innerText = "NEU";
+                document.getElementById('sentScore').style.color = "#fff";
+            }
+
+            // Coach
+            if (data.coaching_tip) document.getElementById('coachText').innerText = data.coaching_tip.toUpperCase();
+            if (data.smart_prompt) document.getElementById('provText').innerText = data.smart_prompt.toUpperCase();
+
+            // Ammo
+            if (data.ammo_remaining) {
+                document.getElementById('ammoCount').innerText = data.ammo_remaining;
+                let keep = Math.floor(data.ammo_remaining / 2);
+                document.querySelectorAll('.bullet-sq').forEach((b, i) => {
+                    if (i >= keep) b.classList.add('spent');
+                });
+            }
+        }
+
+    </script>
+</body>
+
+</html>

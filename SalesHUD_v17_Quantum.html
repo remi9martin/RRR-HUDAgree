@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD v17 - QUANTUM</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --glass-bg: rgba(5, 10, 20, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --accent-primary: #00f0ff;
+            /* Quantum Blue */
+            --accent-secondary: #ff0055;
+            /* Alert Red */
+            --accent-tertiary: #ffcc00;
+            /* Caution Yellow */
+            --accent-success: #00ff99;
+            /* Go Green */
+
+            --grid-line: rgba(255, 255, 255, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scrollbar-width: none;
+        }
+
+        ::-webkit-scrollbar {
+            width: 0;
+        }
+
+        body {
+            background-color: #000;
+            background-image:
+                radial-gradient(circle at 50% 50%, #111 0%, #000 100%),
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+
+            color: #fff;
+            font-family: 'Chakra Petch', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- LAYOUT GRID --- */
+        .quantum-grid {
+            width: 98vw;
+            height: 96vh;
+            display: grid;
+            grid-template-columns: 350px 1fr 350px;
+            grid-template-rows: 60px 1fr 180px;
+            gap: 10px;
+        }
+
+        /* --- MODULE STYLE (SQUARED OFF) --- */
+        .q-mod {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            /* Squared off, no radius */
+            position: relative;
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .q-header {
+            background: rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 5px 10px;
+            font-size: 0.7rem;
+            color: var(--accent-primary);
+            letter-spacing: 1px;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            text-transform: uppercase;
+        }
+
+        .q-body {
+            flex: 1;
+            padding: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- TOP BAR --- */
+        .top-row {
+            grid-column: 1 / 4;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .brand span {
+            color: var(--accent-primary);
+        }
+
+        .conf-rail {
+            flex: 1;
+            margin: 0 40px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            position: relative;
+        }
+
+        .conf-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-success));
+            width: 0%;
+            transition: width 0.5s;
+            position: relative;
+        }
+
+        .conf-fill::after {
+            content: attr(data-val);
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: 700;
+            color: #000;
+            font-size: 0.8rem;
+        }
+
+        /* --- LEFT COL (INTEL) --- */
+        .col-left {
+            grid-row: 2 / 4;
+            display: grid;
+            grid-template-rows: 250px 200px 1fr;
+            gap: 10px;
+        }
+
+        .prof-flex {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .prof-img {
+            width: 60px;
+            height: 60px;
+            background: #333;
+            border: 1px solid var(--accent-primary);
+        }
+
+        .prof-data {
+            font-size: 0.8rem;
+            line-height: 1.4;
+            color: #ccc;
+        }
+
+        .social-strip {
+            margin-top: 10px;
+            border-top: 1px solid var(--glass-border);
+            padding-top: 10px;
+        }
+
+        .social-item {
+            font-size: 0.7rem;
+            color: var(--accent-tertiary);
+            margin-bottom: 5px;
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .ledger-box {
+            font-size: 0.8rem;
+        }
+
+        .l-row {
+            margin-bottom: 8px;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+            padding-bottom: 4px;
+        }
+
+        .l-lbl {
+            color: #888;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+        }
+
+        .l-val {
+            color: #fff;
+        }
+
+        /* --- CENTER (VISUALS) --- */
+        .col-center {
+            grid-row: 2 / 3;
+            display: grid;
+            grid-template-rows: 80px 1fr;
+            gap: 10px;
+        }
+
+        .hook-box {
+            border: 1px solid var(--accent-success);
+            background: rgba(0, 255, 153, 0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .hook-msg {
+            font-size: 1.1rem;
+            color: #fff;
+            text-shadow: 0 0 10px var(--accent-success);
+        }
+
+        .main-viz {
+            position: relative;
+            display: grid;
+            place-items: center;
+            background: radial-gradient(circle, rgba(0, 240, 255, 0.05) 0%, transparent 70%);
+        }
+
+        /* 3D Helix (Simplified from v16) */
+        .helix-core {
+            width: 60px;
+            height: 100%;
+            position: relative;
+        }
+
+        .dna-node {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-primary);
+            position: absolute;
+            left: 50%;
+            border-radius: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 5px var(--accent-primary);
+        }
+
+        /* Spectrogram Overlay */
+        .spectro-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            opacity: 0.5;
+        }
+
+        .s-bar {
+            flex: 1;
+            background: var(--accent-primary);
+        }
+
+
+        /* --- RIGHT COL (TACTICS) --- */
+        .col-right {
+            grid-row: 2 / 4;
+            display: grid;
+            grid-template-rows: 200px 1fr 200px;
+            gap: 10px;
+        }
+
+        .pbd-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            height: 100%;
+            gap: 1px;
+            background: var(--glass-border);
+        }
+
+        .pbd-cell {
+            background: rgba(0, 0, 0, 0.5);
+            display: grid;
+            place-items: center;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .pbd-cell.active {
+            background: var(--accent-secondary);
+            color: #fff;
+            font-weight: 700;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .orbit-map {
+            border: 1px solid var(--glass-border);
+            height: 100%;
+            position: relative;
+            background:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 10px 10px;
+        }
+
+        .orbit-dot {
+            width: 10px;
+            height: 10px;
+            background: #fff;
+            position: absolute;
+            top: 50%;
+            left: 10%;
+            margin-top: -5px;
+            box-shadow: 0 0 10px #fff;
+            transition: left 0.5s;
+        }
+
+        .step-ind {
+            position: absolute;
+            bottom: 5px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--accent-primary);
+        }
+
+        .ammo-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 2px;
+            padding: 5px;
+        }
+
+        .ammo-bit {
+            height: 8px;
+            background: var(--accent-tertiary);
+            opacity: 0.8;
+        }
+
+        .ammo-bit.used {
+            opacity: 0.2;
+            background: #555;
+        }
+
+
+        /* --- BOTTOM DECK --- */
+        .deck-row {
+            grid-column: 2 / 3;
+            grid-row: 3;
+            display: grid;
+            grid-template-columns: 200px 1fr 200px;
+            gap: 10px;
+        }
+
+        .dom-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .dom-meter {
+            height: 15px;
+            background: #222;
+            display: flex;
+            border: 1px solid #444;
+        }
+
+        .dm-ag {
+            width: 50%;
+            background: var(--accent-primary);
+        }
+
+        .dm-ld {
+            width: 50%;
+            background: var(--accent-secondary);
+        }
+
+        .coach-big {
+            border: 1px solid var(--accent-primary);
+            background: rgba(0, 240, 255, 0.05);
+            display: grid;
+            place-items: center;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .coach-txt {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .mic-sq {
+            background: transparent;
+            border: 1px solid var(--accent-primary);
+            color: var(--accent-primary);
+            font-family: 'Chakra Petch';
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: grid;
+            place-items: center;
+        }
+
+        .mic-sq:hover {
+            background: rgba(0, 240, 255, 0.2);
+        }
+
+        .mic-sq.live {
+            background: var(--accent-success);
+            color: #000;
+            border-color: var(--accent-success);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="quantum-grid">
+
+        <!-- TOP -->
+        <div class="top-row">
+            <div class="brand">QUANTUM<span>HUD</span></div>
+            <div class="conf-rail">
+                <div class="conf-fill" id="confBar" data-val="0%"></div>
+            </div>
+            <div style="font-family:'JetBrains Mono'; font-size:1.2rem;" id="clock">00:00:00</div>
+        </div>
+
+        <!-- LEFT (INTEL) -->
+        <div class="col-left">
+            <div class="q-mod">
+                <div class="q-header"><span>TARGET PROFILE</span></div>
+                <div class="q-body">
+                    <div class="prof-flex">
+                        <div class="prof-img"></div>
+                        <div class="prof-data">
+                            <strong>IDENTIFYING...</strong><br>
+                            ROLE: DECISION MAKER<br>
+                            IND: SAAS / TECH
+                        </div>
+                    </div>
+                    <div class="social-strip">
+                        <div class="social-item"><span>🐦</span> Recent tweet about AI scale</div>
+                        <div class="social-item"><span>💼</span> Promoted 2 months ago</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="q-mod">
+                <div class="q-header"><span>THE LEDGER</span></div>
+                <div class="q-body ledger-box">
+                    <div class="l-row"><span class="l-lbl">LIKES:</span> <span class="l-val">Speed, Efficiency,
+                            ROI</span></div>
+                    <div class="l-row"><span class="l-lbl">DISLIKES:</span> <span class="l-val">Fluff, Long Demos</span>
+                    </div>
+                    <div class="l-row"><span class="l-lbl">Q'S ASKED:</span> <span class="l-val" id="qCount">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="q-mod">
+                <div class="q-header"><span>TRANSCRIPT</span></div>
+                <div class="q-body" style="font-family:'JetBrains Mono'; font-size:0.7rem; color:#888; overflow-y:auto;"
+                    id="term">
+                    > SYSTEM READY...
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER (VISUALS) -->
+        <div class="col-center">
+            <div class="q-mod hook-box">
+                <div style="font-size:0.6rem; color:var(--accent-success); letter-spacing:2px; margin-bottom:5px;">SMART
+                    OPENER</div>
+                <div class="hook-msg" id="hookText">"I saw your post on AI scaling..."</div>
+            </div>
+
+            <div class="q-mod main-viz">
+                <div style="position:absolute; top:10px; left:10px; font-size:0.7rem; color:var(--accent-primary);">
+                    ATTENTION FLUX</div>
+
+                <!-- Helix Animation -->
+                <div class="helix-core" id="helix"></div>
+
+                <!-- Spectrogram -->
+                <div class="spectro-overlay" id="spectro"></div>
+            </div>
+        </div>
+
+        <!-- RIGHT (TACTICS) -->
+        <div class="col-right">
+            <div class="q-mod">
+                <div class="q-header"><span>PBD MATRIX</span></div>
+                <div class="q-body" style="padding:0;">
+                    <div class="pbd-grid">
+                        <div class="pbd-cell" id="pb-survival">SURVIVAL</div>
+                        <div class="pbd-cell" id="pb-security">SECURITY</div>
+                        <div class="pbd-cell" id="pb-success">SUCCESS</div>
+                        <div class="pbd-cell" id="pb-significance">SIGNIFICANCE</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="q-mod">
+                <div class="q-header"><span>SALES ORBIT</span></div>
+                <div class="q-body orbit-map">
+                    <div class="orbit-dot" id="mapDot"></div>
+                    <div class="step-ind" id="stepLbl">DISCOVERY</div>
+                </div>
+            </div>
+
+            <div class="q-mod">
+                <div class="q-header"><span>TACTICAL AMMO</span> <span id="ammoTxt" style="color:#fff;">50</span></div>
+                <div class="q-body">
+                    <div class="ammo-grid" id="ammoGrid"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM DECK -->
+        <div class="deck-row">
+            <div class="q-mod dom-box">
+                <div class="q-header" style="background:transparent; border:none; padding:2px;"><span>DOMINANCE</span>
+                </div>
+                <div style="padding:5px;">
+                    <div class="dom-meter">
+                        <div class="dm-ag" id="barAg"></div>
+                        <div class="dm-ld" id="barLd"></div>
+                    </div>
+                    <div
+                        style="display:flex; justify-content:space-between; font-size:0.6rem; color:#666; margin-top:2px;">
+                        <span>YOU</span> <span>LEAD</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="q-mod coach-big">
+                <div style="font-size:0.7rem; color:#888; margin-bottom:5px;">REAL-TIME GUIDANCE</div>
+                <div class="coach-txt" id="coachText">ESTABLISH RAPPORT</div>
+            </div>
+
+            <div class="q-mod">
+                <button class="mic-sq" id="micBtn" onclick="toggleMic()" style="height:100%; border:none;">
+                    INIT<br>AUDIO
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:47293/api/analyze/sales-call";
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let isListening = false;
+        let fullTranscript = "";
+
+        // UI INIT
+        setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString(), 1000);
+
+        // Ammo
+        const ag = document.getElementById('ammoGrid');
+        for (let i = 0; i < 50; i++) {
+            let d = document.createElement('div'); d.className = 'ammo-bit'; ag.appendChild(d);
+        }
+
+        // Spectro
+        const sp = document.getElementById('spectro');
+        for (let i = 0; i < 30; i++) {
+            let b = document.createElement('div'); b.className = 's-bar'; sp.appendChild(b);
+        }
+        setInterval(() => {
+            document.querySelectorAll('.s-bar').forEach(b => {
+                b.style.height = (Math.random() * 80 + 10) + '%';
+            });
+        }, 100);
+
+        // Helix
+        const hx = document.getElementById('helix');
+        for (let i = 0; i < 15; i++) {
+            let n = document.createElement('div'); n.className = 'dna-node';
+            n.style.top = (i * 20) + 'px';
+            n.dataset.off = i * 0.5;
+            hx.appendChild(n);
+        }
+        let ht = 0;
+        setInterval(() => {
+            ht += 0.1;
+            document.querySelectorAll('.dna-node').forEach(n => {
+                let x = Math.sin(ht + parseFloat(n.dataset.off)) * 20;
+                n.style.transform = `translateX(calc(-50% + ${x}px)) scale(${Math.cos(ht + parseFloat(n.dataset.off)) * 0.4 + 0.8})`;
+            });
+        }, 50);
+
+        // LOGIC
+        function toggleMic() {
+            if (!SpeechRecognition) { alert("Chrome Req"); return; }
+            let b = document.getElementById('micBtn');
+            if (isListening) {
+                isListening = false; recognition.stop();
+                b.classList.remove('live');
+            } else {
+                isListening = true;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.onresult = proc;
+                recognition.onend = () => { if (isListening) recognition.start(); };
+                recognition.start();
+                b.classList.add('live');
+            }
+        }
+
+        let qCount = 0;
+        async function proc(e) {
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+                if (e.results[i].isFinal) {
+                    let txt = e.results[i][0].transcript;
+                    fullTranscript += txt + " ";
+
+                    // Q Check
+                    if (txt.includes('?')) { qCount++; document.getElementById('qCount').innerText = qCount; }
+
+                    let d = document.createElement('div');
+                    d.style.marginBottom = "5px";
+                    d.innerText = txt;
+                    let t = document.getElementById('term');
+                    t.appendChild(d); t.scrollTop = t.scrollHeight;
+
+                    try {
+                        let r = await fetch(API_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ transcript: fullTranscript })
+                        });
+                        let data = await r.json();
+                        if (data.success) render(data);
+                    } catch (e) { }
+                }
+            }
+        }
+
+        function render(d) {
+            if (d.confidence_score) {
+                let p = d.confidence_score;
+                let bar = document.getElementById('confBar');
+                bar.style.width = p + '%';
+                bar.dataset.val = p + '%';
+
+                // Map
+                document.getElementById('mapDot').style.left = (10 + p * 0.8) + '%';
+                document.getElementById('stepLbl').innerText = p > 80 ? "CLOSING" : (p > 50 ? "PITCHING" : "DISCOVERY");
+            }
+
+            if (d.pbd_mindset) {
+                document.querySelectorAll('.pbd-cell').forEach(c => c.classList.remove('active'));
+                let k = "pb-" + d.pbd_mindset.toLowerCase();
+                if (document.getElementById(k)) document.getElementById(k).classList.add('active');
+            }
+
+            if (d.coaching_tip) document.getElementById('coachText').innerText = d.coaching_tip.toUpperCase();
+            if (d.smart_prompt) document.getElementById('hookText').innerText = `"${d.smart_prompt}"`;
+
+            if (d.ammo_remaining) {
+                document.getElementById('ammoTxt').innerText = d.ammo_remaining;
+                let u = 50 - d.ammo_remaining;
+                document.querySelectorAll('.ammo-bit').forEach((b, i) => {
+                    if (i < u) b.classList.add('used'); else b.classList.remove('used');
+                });
+            }
+
+            // Dom Update (Simulated based on transcript length or random if no data)
+            // Ideally backend provides this, but we can sim:
+            let r = Math.random() * 100;
+            document.getElementById('barAg').style.width = r + '%';
+            document.getElementById('barLd').style.width = (100 - r) + '%';
+        }
+
+    </script>
+</body>
+
+</html>

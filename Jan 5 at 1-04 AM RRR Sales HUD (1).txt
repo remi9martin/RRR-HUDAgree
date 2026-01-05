@@ -1,0 +1,258 @@
+[Speaker 1]
+Okay, I'm trying designing a dashboard like a. Screen that allows agents who are pitching services.
+
+Like selling credit card processing? Selling Insurance. Mortgages. So I, I want to create a live app. Where did they have on the screen? And what it does is it's listened real time. To the conversation. And not only does it have all of the background information. About. The individual. As much background information as is available. Can be loaded into the profile. Of the person to call him. You can learn information about their business, their life, their social media.
+
+[Speaker 2]
+And.
+
+That will
+
+[Speaker 1]
+All be data that's actionable. And useful.
+
+And trying to sell the product.
+
+[Speaker 2]
+So,
+
+[Speaker 1]
+I mean, the idea is going to be to. Really get a good profile on a person. It'll acquire all their background information. I'm gonna do that game. Pitbull spoke you one of those service so that entire profile goes in. Oh, their social media cans will be found. And every all the as many social media posts as able will be evolved. Digested their photos. Their comments. Everything on the internet that is possibly available. Would be. Collected and then analyzed. And so, what you are doing is analyzing it for. When they're in a good mood, what things they like? What their personality is like? Whether they are? Someone who jumps head first into them or they're more options. Maybe their cat lover, maybe their motorcycles? Maybe they just had a family member died and? There was a big problem for the immediate family because there was no health insurance. And so. As much as possible will be absorbed and be in the serum. In the damage. So, then a following analysis? Is available with that person. So, now when you're speaking to them live? It's going to be listening to. This platform is going to be like a heads-up display, I hope HUD. Um. You'll be almost like in a video game. You see how much ammo you have left? You'll see the mini map except here. It's going to be how long you've been on a call if you think the person's still interested if they're tired if the last thing they said was? Was Amy? Not liking the product at all, or they really loved that last statement.
+
+Essentially, you have background information to help fill the gaps and help color. Any part of the conversation that's possible. And then you have live transcription analysis. Where, if possible, every other word that is said, there's a reassessment.
+
+[Speaker 2]
+Of the.
+
+[Speaker 1]
+Intense, desired emotions, patience. Um, and it can make assessments based on how long a call has been going. And you can see that the predominance of? Oh, in the past stuff, you can see their education level where they grew up, what their potential income is.
+
+But you can see the dominance of the call who's been talking the most. Has the client ever shown interest and asked a question or have they just been being pitched to? Domination McCall been by the agent. Enhance. The client tried to speak or.
+
+Mostly Sac. By it, have they asked any questions? How many questions have they asked? So, how many questions did they ask? Um. How many, how many points did? Show interest. What are the bullet points where they ask questions about? What are the bullet points where they were interested in? So, yes, that sounds interesting. So, you'll get a full highlight with bullet points. Where they show interest where they didn't like things where they liked, things where they wanted more information.
+
+If they mentioned their product type, like their credit card processing terminal.
+
+If they mention anything, answer their information about friends family. What are some leading questions that can be asked, which would dive a little bit more into? Social life, personal life, home life. Of the individual. So that way more information cannot happen. So, what, and the platform would actually provide leading questions who are really Pro being questioning that seem innocent, but actually gather? Are meant to gather subconscious data about. The leader about to call the how it's gone. There could be everyone's, and that would be those questions that would be prompted every once in a while.
+
+[Speaker 2]
+Also, now
+
+[Speaker 1]
+Introduced into the call, would be because it would be a benefit questions, like, how am I doing here? Am I borrowing you or? Is in a positive light. How am I doing going too fast? How am I doing? Maybe? Am I explaining things that you already know you're a smart guy? And just different question that you would ask. Their retention. Like, what did you think about this? And depending on their answer, you'll know if they're listening or not. Um. You're a boat guy, you would know this. What do you think about this? But there need to be as many. Leading questions as possible. To train, engage. How the call is gone, and it would just be. Refocusing attentional thing. Um, getting. The there would be reminders how often to snap the individual back into Focus by asking them a question. It's been too long since they spoke. I asked the question they might be losing interest. Or like 70, not paying attention. 70 chance, not paying attention. Or you're losing. And mentioned something startling. Or, they seem angry by that last name. Well, they seem confused, or when you said that last thing, it was actually. It didn't sit well with them, and now they're quiet. So, down minutes of the call, how long they've been quiet. So, they're speaking. They'll tell you how long since?
+
+[Speaker 2]
+The
+
+[Speaker 1]
+Lead has spoken.
+
+Yeah, so how long since the lead has spoken? How long is your last? Is this last tangent going for? Are you speaking too fast, or are you speaking too slow? Well, that might be hard to get because it's text to speech. Or speech to voice to text is? Not going to be really tracking speed.
+
+[Speaker 2]
+But so that's
+
+[Speaker 1]
+Going to be the secret sauce of this platform is. Most people will only use it.
+
+Well, you can actually provoke the conversation in order to get a read on the person. You can ask questions that will get them riled up. You can ask questions that'll calm them down. You'll ask questions. Let's see if they're paying attention, and if they don't know the answer, they might feel a little embarrassed and pay attention for the rest of the next couple statements.
+
+What are their tips and tricks? Could I use? In order to elicit a response.
+
+From.
+
+Or 70 chance they're not paying attention. Here's what you should say or ask or do? Or even stupid stuff like? Do a pretend cough and then ask, I'm sorry.
+
+Are you still there? It could be stupid things that are suggested that will break up the monotony of just talking. There could be personal questions that could be asked. Certain sentences maybe phrased differently if they have.
+
+[Speaker 2]
+For example, a
+
+[Speaker 1]
+Pet and that might come up in another conversation points. But so, you're going to be listening to what they say. You're also going to be judging the agent. When they're not?
+
+They're following the Playbook. How interesting their delivery sounds.
+
+But they're repeating themselves.
+
+[Speaker 2]
+If they're
+
+[Speaker 1]
+Repeating themselves if they're speaking to slow if they're speaking in circles. If they're boring. Or every once in a while. If the system notices, there's a point where. A joke or a witty comment can be inserted. It would also highlight. But you can simultaneously rate the agent. Just as well as Guide the agent to be successful with the call.
+
+[Speaker 2]
+So, give me a list
+
+[Speaker 1]
+Of. Ways to rate the agent? What kind of criteria?
+
+Areas of improvement. While it's live on the call it, I'll definitely offer a use of improvement, speak slower, engage with the client more. Ask them every once in a while they're following along.
+
+If there are agents who have very good track records or the AI noise so that they're using good techniques, those can be shared amongst the other agents.
+
+And obviously, that would be information we would also have
+
+[Speaker 2]
+For our purposes.
+
+Give me
+
+[Speaker 1]
+25 live metrics that can be tracked. And the call. To engage interest. Appeal. Attention span. Of the individual. Are there some preliminary questions that could be asked that would?
+
+[Speaker 2]
+Test.
+
+[Speaker 1]
+The lead on a number of factors prior to the call, even beginning with the pitch.
+
+[Speaker 2]
+And
+
+[Speaker 1]
+You get an idea what type of person they are. How relax they are, how intelligent they are, how fix it on details.
+
+[Speaker 2]
+What kind of questions
+
+[Speaker 1]
+Could be asked? That would be predictive.
+
+Going forward.
+
+Can there be a bar?
+
+[Speaker 2]
+That
+
+[Speaker 1]
+Gives me life confidence interval of successfully closing the deal. As the conversation goes. So, it's like a live sentiment analysis that says.
+
+[Speaker 2]
+You are 70
+
+[Speaker 1]
+Likely to close this deal. And then, if they say something better and more correctly, you are now. 78, closer to closing the speed.
+
+And obviously, the longer the car goes. The more data there's going to be.
+
+If there are previous calls? With this individual. Then all that data can be analyzed. As well. For historic information, like what they said before?
+
+[Speaker 2]
+Things to bring up
+
+[Speaker 1]
+A callback. So, yeah, in case there are secondary pitches and third pitches. What kind of questions can be asked that will later be a callback that will be appreciated?
+
+Give the live real time.
+
+Both. Agent as well.
+
+As well as the lead. And you wouldn't just say angry or sad, but whatever the emotion it's leaning to. You then have like a speedometer that shows how far in that direction it's going, so they're not angry, but? Slightly towards England.
+
+Oh, there's a scale that Patrick bet David uses.
+
+See where people are and? In life pretty much if they.
+
+[Speaker 2]
+What type of person where
+
+[Speaker 1]
+They are? Is it like, spiritually, but different?
+
+[Speaker 2]
+Can you design
+
+[Speaker 1]
+A super sexy dashboard? That. That looks one that looks like a game. And it's very nerdy gamified.
+
+[Speaker 2]
+And another that's more practical
+
+[Speaker 1]
+Than just. Other potential uses of this would be. Business deal like M A's? On a date, it would pull up things from her profile dating profiles about social. It can tell you what to ask about. What she's interested in. What she really lit up about. And so obviously. This could also be used for a text listening, so if you were messaging your girl, it would be able to tell you. What to do next with the xanax, an analysis of? Then the confidence interval of this tender date, value, and positive.
+
+But almost any interaction could be judged live on a number of factors. And you just put in the purpose of the call and what the relationship is to you. And then it will begin to.
+
+[Speaker 2]
+Put up metrics that are relevant to that conversation
+
+[Speaker 1]
+In the relationship. Another thing that the agent can do is put in a lot of put in their resume. Put in their interests. They could put in their social media profile because then. The platform will know. Which things you can speak about genuinely? So, have you ever Labrador Retriever name? Frankie. It might say hey, good point to bring up Frankie. Soft. In the conversation, change the subject a little bit. Frankie is a good segment.
+
+[Speaker 2]
+You put in
+
+[Speaker 1]
+Your sales experience comfort level. Under advertising for this. Definitely need to point out like that. It rates what the agent is saying. It rates what the lead is saying. It does live analysis every third word. You get a reset. It gives a confidence internal of a successful close. It builds throughout the conversation. To generate a closing statement. Wait or something's wrong? Um, but another thing to be very, I would say. The platform builder profile on the lead. But at the same time, if the agent solicious, they can create a profile on themselves and the platform will know. What things to bring up from your life when the time is appropriate because they know you can speak passionately about it?
+
+[Speaker 2]
+So, you're going to
+
+[Speaker 1]
+Design the. Dashboard, like the settings page. You're going to design. The actual HUD.
+
+[Speaker 2]
+Um. Is there something relevant
+
+[Speaker 1]
+That the agent should be staring at while they're on the call? For example, are they more effective if they're looking at the face of the person they're calling? Find studies about that. Are they more effective if they're staring at somebody that's pretty? And just an AI generated picture of someone pretty. Will there be? Like bubbly and happy? Or. Just a blank face or nobody's face, and just. Silhouette, be better. I want you to find studies about that word sales agents making calls.
+
+[Speaker 2]
+Do they perform better or worse?
+
+[Speaker 1]
+When they are looking at a photo of the? In general. What makes the in-person sales pitch more effective? Then the phone call. Is it that the agent can see the? Need, or that the lead can see the agent? In which everybody is? Please find the studies.
+
+[Speaker 2]
+Find any
+
+[Speaker 3]
+Studies you can about.
+
+[Speaker 1]
+Sales calls and pitching. And converting leads. Or even. The act of persuasion. Then, you're going to utilize these. To show them as proof, like you're going to make recommendations. Live or or beforehand? Or with the analysis of. New platform. Here with the analysis post after the call.
+
+Get as many studies as you can about convincing persuasion sales. And we're going to cite those and use a lot of the tips that we can. The other thing is, we need to. Ingest all of this. The work by Chase Hughes? And find what tips he has given. About convincing someone about trying to figure out their intentions or their desires, or how agreeable they are. Or how to make them more agreeable?
+
+How do we ingest his whole set of advice? What about purchasing his book and digesting everything? The tips what are his main? Bullet points. Dealing with people, or how do you plant the seed? How do you find out what they really want? How do you get them excited? So, let's take a look at all of his work if possible. So I find all of his books find all of his written work. Find all his YouTube channel stuff and anywhere where he has put content online. Let's find it. So that way we can. Utilize it, and I want to be something. Make giant guide. The sales project, and then we wouldn't even have to like, say that we've borrowed some of his techniques. But it basically be the biggest guy on convincing people achieving agreeableness. Closing the deal. Concepts like that, which would heavily rely on some of his teachings and Analysis about psychology of the human mind. And we can make our proprietary algorithm.
+
+[Speaker 2]
+Give me at least 25
+
+[Speaker 1]
+Ideas that could make this. Concept better? More important, more effective. Improvement.
+
+Um, even things like that makes you work.
+
+Tedious, or it makes it more pleasing, or it makes it more relaxing for the person who's working or how it prevents burnout.
+
+[Speaker 2]
+And then let's
+
+[Speaker 1]
+Enter simple questions. Like, how do we know if somebody's angry and list out all the criteria? How do we know if somebody's sad lists following criteria? On the call. There would be all these different things that are happening being said, being responded to. And. You would basically be using pattern matching. To say, hey, they hit 10 of the bullet points for Ingrid. They're pretending. They're not.
+
+[Speaker 2]
+I don't know if that would
+
+[Speaker 1]
+Help reverse engineering all the emotions. Manipulation. Are they trying to be manipulated? In what ways? What manipulation techniques are they using?
+
+Hypnosis. What techniques have you taken from hypnosis? That would help assist with. Achieving agreeableness.
+
+[Speaker 2]
+How to put in jokes
+
+[Speaker 1]
+Or callbacks?
+
+In order to make the Palm bar entertaining.
+
+What other professions could be useful in incorporating into this pitch or this analysis? And something just for us, but? Diagnosing illnesses. Likelihood of? Um, to stimulate the person's too stimulated under stimulated, tired, and happy.
+
+Do
+
+[Speaker 2]
+We have a site profile on the patient or the lead? Do we have a behavioral profile social profile?

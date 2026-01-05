@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD v12 - CORPORATE GLASS</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #0d1117;
+            --glass-bg: rgba(22, 27, 34, 0.7);
+            --glass-border: rgba(56, 139, 253, 0.2);
+            --accent-blue: #2f81f7;
+            --accent-cyan: #39c5bb;
+            --accent-red: #ff7b72;
+            --accent-gold: #d29922;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- DASHBOARD CONTAINER --- */
+        .dashboard-container {
+            width: 98vw;
+            height: 96vh;
+            background: rgba(13, 17, 23, 0.85);
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            display: grid;
+            grid-template-columns: 320px 1fr 340px;
+            grid-template-rows: 70px 1fr 120px;
+            gap: 12px;
+            padding: 12px;
+        }
+
+        /* --- PANELS --- */
+        .panel {
+            background: var(--glass-bg);
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .panel-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* --- TOP BAR --- */
+        .header-bar {
+            grid-column: 1 / 4;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(22, 27, 34, 0.95);
+            border-bottom: 1px solid #30363d;
+            padding: 0 20px;
+            border-radius: 8px;
+        }
+
+        .brand {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .live-badge {
+            background: rgba(255, 123, 114, 0.2);
+            color: var(--accent-red);
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 123, 114, 0.4);
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .confidence-module {
+            flex: 1;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .conf-progress-bg {
+            height: 8px;
+            background: #21262d;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .conf-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+            width: 75%;
+            transition: width 0.5s ease;
+        }
+
+        .timer-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.4rem;
+            color: var(--text-primary);
+        }
+
+        /* --- LEFT SIDEBAR (INTEL) --- */
+        .sidebar {
+            grid-row: 2 / 4;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .avatar-block {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #30363d;
+            border: 2px solid var(--accent-blue);
+            display: grid;
+            place-items: center;
+            font-size: 1.5rem;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            font-size: 0.85rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #21262d;
+        }
+
+        .val {
+            font-weight: 500;
+            color: #fff;
+        }
+
+        .social-feed {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid #30363d;
+            background: #0d1117;
+            border-radius: 6px;
+            padding: 8px;
+        }
+
+        .social-post {
+            background: #161b22;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+            border-left: 3px solid var(--accent-cyan);
+        }
+
+        .pbd-section {
+            background: rgba(56, 139, 253, 0.1);
+            border: 1px solid var(--accent-blue);
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .pbd-val {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        /* --- CENTER STAGE --- */
+        .stage-center {
+            grid-row: 2 / 3;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+        }
+
+        /* Modern circular gauges */
+        .gauges-wrapper {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 20px;
+        }
+
+        .circle-gauge {
+            width: 100px;
+            height: 100px;
+            position: relative;
+            background: conic-gradient(var(--accent-cyan) 0% 70%, #21262d 70% 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .circle-inner {
+            width: 85px;
+            height: 85px;
+            background: var(--glass-bg);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Terminal */
+        .transcription-log {
+            flex: 1;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+
+        .ln-ag {
+            color: var(--accent-blue);
+            margin-bottom: 8px;
+        }
+
+        .ln-cl {
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .ts {
+            color: #484f58;
+            font-size: 0.7rem;
+            margin-right: 8px;
+        }
+
+        /* --- RIGHT SIDEBAR (TACTICS) --- */
+        .sidebar-right {
+            grid-row: 2 / 4;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .ammo-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .ammo-pill {
+            width: 6px;
+            height: 18px;
+            background: var(--accent-gold);
+            border-radius: 2px;
+            opacity: 1;
+        }
+
+        .ammo-pill.used {
+            background: #30363d;
+            opacity: 0.4;
+        }
+
+        .stage-tracker {
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .stage-step {
+            position: relative;
+            padding-bottom: 15px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .stage-step::before {
+            content: '';
+            position: absolute;
+            left: -16px;
+            top: 4px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #30363d;
+        }
+
+        .stage-step::after {
+            content: '';
+            position: absolute;
+            left: -13px;
+            top: 14px;
+            width: 2px;
+            height: 15px;
+            background: #30363d;
+        }
+
+        .stage-step.active {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .stage-step.active::before {
+            background: var(--accent-cyan);
+            box-shadow: 0 0 8px var(--accent-cyan);
+        }
+
+        .coach-card {
+            background: rgba(47, 129, 247, 0.1);
+            border-left: 4px solid var(--accent-blue);
+            padding: 12px;
+            border-radius: 4px;
+        }
+
+        .coach-main {
+            color: #fff;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .coach-sub {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+
+        /* --- BOTTOM DECK (ACTION) --- */
+        .bottom-deck {
+            grid-column: 2 / 3;
+            grid-row: 3;
+            display: flex;
+            gap: 12px;
+        }
+
+        .provocation-slot {
+            flex: 2;
+            background: linear-gradient(90deg, rgba(255, 123, 114, 0.1), transparent);
+            border: 1px solid var(--accent-red);
+            border-radius: 6px;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .prov-content {
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .dominance-slot {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .dom-pill {
+            height: 12px;
+            background: #21262d;
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .dp-ag {
+            width: 50%;
+            background: var(--accent-blue);
+        }
+
+        .dp-cl {
+            width: 50%;
+            background: var(--text-secondary);
+        }
+
+        /* Mic Button */
+        .mic-btn-rect {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: var(--accent-blue);
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(47, 129, 247, 0.3);
+        }
+
+        .mic-btn-rect:hover {
+            background: #58a6ff;
+        }
+
+        .mic-btn-rect.active {
+            background: var(--accent-red);
+            animation: pulseRed 2s infinite;
+        }
+
+        @keyframes pulseRed {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 123, 114, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 123, 114, 0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="dashboard-container">
+
+        <!-- HEADER -->
+        <div class="header-bar">
+            <div class="brand">
+                <span>VITAL<span style="color:var(--accent-blue)">RX</span> HUD</span>
+                <span class="live-badge">● LIVE</span>
+            </div>
+
+            <div class="confidence-module">
+                <div
+                    style="display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-secondary);">
+                    <span>CLOSING PROBABILITY</span>
+                    <span id="confVal" style="color:#fff">Analyzing...</span>
+                </div>
+                <div class="conf-progress-bg">
+                    <div class="conf-progress-fill" id="confBar" style="width: 50%;"></div>
+                </div>
+            </div>
+
+            <div class="timer-display" id="timer">00:00</div>
+        </div>
+
+        <!-- LEFT SIDEBAR -->
+        <div class="panel sidebar">
+            <div class="panel-title">LEAD INTELLIGENCE</div>
+
+            <div class="avatar-block">
+                <div class="avatar">👤</div>
+                <div>
+                    <div style="font-weight:700; color:#fff;">Caller ID</div>
+                    <div style="font-size:0.8rem; color:var(--text-secondary);">Identifying...</div>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-row"><span>Source</span> <span class="val">Inbound</span></div>
+                <div class="info-row"><span>Intent</span> <span class="val" id="intentVal">--</span></div>
+            </div>
+
+            <div class="pbd-section">
+                <div style="font-size:0.7rem; color:var(--text-secondary); margin-bottom:4px;">PSYCH PROFILE (PBD)</div>
+                <div class="pbd-val" id="mindsetVal">--</div>
+            </div>
+
+            <div class="panel-title" style="margin-top:10px;">SOCIAL FEED</div>
+            <div class="social-feed">
+                <!-- Mock Items -->
+                <div class="social-post">
+                    <div style="font-weight:600; margin-bottom:2px;">LinkedIn</div>
+                    "Excited to scale our operations this Q4!"
+                </div>
+                <div class="social-post">
+                    <div style="font-weight:600; margin-bottom:2px;">Twitter</div>
+                    "Why is enterprise software so clunky? #ux"
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER STAGE -->
+        <div class="stage-center">
+
+            <div class="gauges-wrapper">
+                <div>
+                    <div class="circle-gauge"
+                        style="background: conic-gradient(var(--accent-cyan) 0% 85%, #21262d 85% 100%);">
+                        <div class="circle-inner">
+                            <div style="font-size:1.5rem; font-weight:700; color:#fff;" id="engScore">85</div>
+                            <div style="font-size:0.6rem; color:var(--text-secondary);">ENGAGEMENT</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <!-- Sentiment Gauge -->
+                    <div class="circle-gauge" id="sentGaugeBg">
+                        <div class="circle-inner">
+                            <div style="font-size:1.5rem; font-weight:700; color:#fff;" id="sentScore">NEU</div>
+                            <div style="font-size:0.6rem; color:var(--text-secondary);">SENTIMENT</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="transcription-log" id="term">
+                <div style="color:var(--text-secondary); text-align:center; padding-top:20px;">
+                    &lt; System Ready. Press 'Start Session' to begin analysis. &gt;
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT SIDEBAR -->
+        <div class="panel sidebar-right">
+            <div class="panel-title">TACTICAL STATUS</div>
+
+            <div style="margin-bottom:20px;">
+                <div style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:5px;">AMMO RESERVES <span
+                        id="ammoPct">100%</span></div>
+                <div class="ammo-container" id="ammoRack"></div>
+            </div>
+
+            <div class="stage-tracker">
+                <div class="stage-step active">Discovery</div>
+                <div class="stage-step">Qualification</div>
+                <div class="stage-step">Proposal</div>
+                <div class="stage-step">Close</div>
+            </div>
+
+            <div class="panel-title" style="margin-top:auto;">AI COACH</div>
+            <div class="coach-card">
+                <div class="coach-main" id="coachText">LISTENING...</div>
+                <div class="coach-sub" id="coachSub">Waiting for conversation flow.</div>
+            </div>
+        </div>
+
+        <!-- BOTTOM DECK -->
+        <div class="bottom-deck">
+            <div class="provocation-slot">
+                <div>
+                    <div
+                        style="font-size:0.7rem; color:var(--accent-red); font-weight:700; letter-spacing:1px; margin-bottom:4px;">
+                        ⚠️ PROVOCATION SUGGESTION</div>
+                    <div class="prov-content" id="provocText">Ask: "What's the cost of inaction?"</div>
+                </div>
+            </div>
+
+            <div class="panel dominance-slot">
+                <div
+                    style="font-size:0.75rem; color:var(--text-secondary); display:flex; justify-content:space-between; margin-bottom:4px;">
+                    <span>AGENT</span> <span>LEAD</span>
+                </div>
+                <div class="dom-pill">
+                    <div class="dp-ag" id="barAg"></div>
+                    <div class="dp-cl" id="barCl"></div>
+                </div>
+            </div>
+        </div>
+
+        <button class="mic-btn-rect" id="micBtn" onclick="toggleMic()">START SESSION</button>
+
+    </div>
+
+    <!-- LOGIC -->
+    <script>
+        const API_URL = "http://localhost:47293/api/analyze/sales-call";
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let isListening = false;
+        let fullTranscript = "";
+        let sec = 0;
+        let timerInt;
+
+        let agentW = 0;
+        let clientW = 0;
+
+        // INIT UI: Fill Ammo
+        const ammoRack = document.getElementById('ammoRack');
+        for (let i = 0; i < 30; i++) {
+            let p = document.createElement('div');
+            p.className = 'ammo-pill';
+            ammoRack.appendChild(p);
+        }
+
+        function toggleMic() {
+            if (!SpeechRecognition) { alert("Chrome Required"); return; }
+            const btn = document.getElementById('micBtn');
+
+            if (isListening) {
+                isListening = false;
+                recognition.stop();
+                clearInterval(timerInt);
+                btn.classList.remove('active');
+                btn.innerText = "RESUME SESSION";
+            } else {
+                isListening = true;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.onresult = processSpeech;
+                recognition.onend = () => { if (isListening) recognition.start(); };
+                recognition.start();
+
+                btn.classList.add('active');
+                btn.innerText = "● RECORDING";
+
+                timerInt = setInterval(() => {
+                    sec++;
+                    let m = Math.floor(sec / 60).toString().padStart(2, '0');
+                    let s = (sec % 60).toString().padStart(2, '0');
+                    document.getElementById('timer').innerText = `${m}:${s}`;
+                }, 1000);
+
+                // Clear initial msg
+                if (document.getElementById('term').innerText.includes("System Ready")) {
+                    document.getElementById('term').innerHTML = "";
+                }
+            }
+        }
+
+        function processSpeech(event) {
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    let text = event.results[i][0].transcript;
+                    fullTranscript += text + " ";
+
+                    let isAg = text.length > 40; // simple heuristic
+
+                    // Log to Terminal
+                    let div = document.createElement('div');
+                    div.className = isAg ? 'ln-ag' : 'ln-cl';
+                    let ts = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    div.innerHTML = `<span class="ts">[${ts}]</span> ` + (isAg ? "<b>AGENT:</b> " : "<b>LEAD:</b> ") + text;
+                    let term = document.getElementById('term');
+                    term.appendChild(div);
+                    term.scrollTop = term.scrollHeight;
+
+                    // Update Metrics
+                    let w = text.split(' ').length;
+                    if (isAg) agentW += w; else clientW += w;
+                    updateDom();
+
+                    // API Call
+                    callBrain();
+                }
+            }
+        }
+
+        function updateDom() {
+            let tot = agentW + clientW;
+            if (tot < 1) return;
+            let ap = (agentW / tot) * 100;
+            document.getElementById('barAg').style.width = ap + "%";
+            document.getElementById('barCl').style.width = (100 - ap) + "%";
+        }
+
+        async function callBrain() {
+            if (fullTranscript.length < 15) return;
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ transcript: fullTranscript })
+                });
+                const data = await res.json();
+                if (data.success) render(data);
+            } catch (e) { }
+        }
+
+        function render(data) {
+            // Confidence
+            if (data.confidence_score) {
+                let p = data.confidence_score;
+                document.getElementById('confVal').innerText = p + "%";
+                document.getElementById('confBar').style.width = p + "%";
+            }
+
+            // Mindset
+            if (data.pbd_mindset) {
+                document.getElementById('mindsetVal').innerText = data.pbd_mindset.toUpperCase();
+            }
+
+            // Sentiment Color
+            let sGauge = document.getElementById('sentGaugeBg');
+            let sScore = document.getElementById('sentScore');
+
+            if (data.sentiment === 'positive') {
+                sScore.innerText = "POS";
+                sGauge.style.background = `conic-gradient(var(--accent-cyan) 0% 100%, #21262d 100%)`;
+            } else if (data.sentiment === 'negative') {
+                sScore.innerText = "NEG";
+                sGauge.style.background = `conic-gradient(var(--accent-red) 0% 100%, #21262d 100%)`;
+            } else {
+                sScore.innerText = "NEU";
+                sGauge.style.background = `conic-gradient(#8b949e 0% 100%, #21262d 100%)`;
+            }
+
+            // Coach
+            if (data.coaching_tip) document.getElementById('coachText').innerText = data.coaching_tip;
+            if (data.smart_prompt) document.getElementById('provocText').innerText = data.smart_prompt;
+
+            // Ammo
+            if (data.ammo_remaining) {
+                let r = Math.ceil((data.ammo_remaining / 100) * 30);
+                document.getElementById('ammoPct').innerText = data.ammo_remaining + "%";
+                document.querySelectorAll('.ammo-pill').forEach((p, i) => {
+                    if (i >= r) p.classList.add('used');
+                });
+            }
+        }
+
+    </script>
+</body>
+
+</html>

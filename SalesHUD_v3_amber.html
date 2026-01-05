@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD - RRR-HUDAgree</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
+
+        :root {
+            --hud-primary: #ff6600;
+            --hud-secondary: #ffaa00;
+            --hud-accent: #ff3300;
+            --hud-success: #00ff44;
+            --hud-warning: #ffcc00;
+            --hud-glow: rgba(255, 102, 0, 0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: #000;
+            color: var(--hud-primary);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Dark space background */
+        .bg-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, #1a0a00 0%, #000 100%);
+            z-index: -2;
+        }
+
+        /* Subtle grid */
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(255, 102, 0, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 102, 0, 0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: -1;
+        }
+
+        /* Corner brackets - Iron Man style */
+        .corner {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            z-index: 100;
+        }
+
+        .corner::before,
+        .corner::after {
+            content: '';
+            position: absolute;
+        }
+
+        .corner-tl {
+            top: 15px;
+            left: 15px;
+        }
+
+        .corner-tl::before {
+            width: 80px;
+            height: 3px;
+            top: 0;
+            left: 0;
+            background: linear-gradient(90deg, var(--hud-primary), transparent);
+            box-shadow: 0 0 10px var(--hud-glow);
+        }
+
+        .corner-tl::after {
+            width: 3px;
+            height: 80px;
+            top: 0;
+            left: 0;
+            background: linear-gradient(180deg, var(--hud-primary), transparent);
+            box-shadow: 0 0 10px var(--hud-glow);
+        }
+
+        .corner-tr {
+            top: 15px;
+            right: 15px;
+        }
+
+        .corner-tr::before {
+            width: 80px;
+            height: 3px;
+            top: 0;
+            right: 0;
+            background: linear-gradient(-90deg, var(--hud-primary), transparent);
+            box-shadow: 0 0 10px var(--hud-glow);
+        }
+
+        .corner-tr::after {
+            width: 3px;
+            height: 80px;
+            top: 0;
+            right: 0;
+            background: linear-gradient(180deg, var(--hud-primary), transparent);
+            box-shadow: 0 0 10px var(--hud-glow);
+        }
+
+        .corner-bl {
+            bottom: 15px;
+            left: 15px;
+        }
+
+        .corner-bl::before {
+            width: 80px;
+            height: 3px;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(90deg, var(--hud-primary), transparent);
+            box-shadow: 0 0 10px var(--hud-glow);
+        }
+
+        .corner-bl::after {
+            width: 3px;
+            height: 80px;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(0deg, var(--hud-primary), transparent);
+            box-shadow: 0 0 10px var(--hud-glow);
+        }
+
+        .corner-br {
+            bottom: 15px;
+            right: 15px;
+        }
+
+        .corner-br::before {
+            width: 80px;
+            height: 3px;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(-90deg, var(--hud-primary), transparent);
+            box-shadow: 0 0 10px var(--hud-glow);
+        }
+
+        .corner-br::after {
+            width: 3px;
+            height: 80px;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(0deg, var(--hud-primary), transparent);
+            box-shadow: 0 0 10px var(--hud-glow);
+        }
+
+        /* Glass panels */
+        .glass-panel {
+            background: rgba(20, 10, 0, 0.5);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 102, 0, 0.25);
+            border-radius: 4px;
+            position: absolute;
+        }
+
+        /* TOP CENTER */
+        .top-center {
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 35px;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            border-top: 2px solid var(--hud-primary);
+            box-shadow: 0 0 20px rgba(255, 102, 0, 0.2);
+        }
+
+        .call-timer {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.2rem;
+            color: var(--hud-secondary);
+            text-shadow: 0 0 20px var(--hud-glow);
+            letter-spacing: 3px;
+        }
+
+        .divider {
+            width: 2px;
+            height: 40px;
+            background: linear-gradient(180deg, transparent, var(--hud-primary), transparent);
+        }
+
+        .confidence-display {
+            text-align: center;
+        }
+
+        .confidence-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(255, 102, 0, 0.5);
+        }
+
+        .confidence-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            color: var(--hud-success);
+            text-shadow: 0 0 15px rgba(0, 255, 68, 0.6);
+        }
+
+        .status-live {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            background: #ff0000;
+            border-radius: 50%;
+            animation: pulseDot 1s infinite;
+            box-shadow: 0 0 10px #ff0000;
+        }
+
+        @keyframes pulseDot {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.6;
+                transform: scale(0.8);
+            }
+        }
+
+        /* LEFT PANEL */
+        .left-panel {
+            top: 100px;
+            left: 20px;
+            width: 250px;
+            bottom: 100px;
+            padding: 12px;
+            overflow-y: auto;
+            border-left: 2px solid var(--hud-primary);
+        }
+
+        .panel-header {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--hud-primary);
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(255, 102, 0, 0.2);
+        }
+
+        .avatar-ring {
+            width: 65px;
+            height: 65px;
+            margin: 0 auto 8px;
+            border: 2px solid var(--hud-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            box-shadow: 0 0 15px var(--hud-glow), inset 0 0 15px rgba(255, 102, 0, 0.15);
+        }
+
+        .lead-name {
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .lead-company {
+            text-align: center;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.4);
+            margin-bottom: 12px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 102, 0, 0.1);
+            font-size: 0.8rem;
+        }
+
+        .data-label {
+            color: rgba(255, 102, 0, 0.5);
+        }
+
+        .data-value {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .tag-section {
+            margin-top: 10px;
+        }
+
+        .tag-section-title {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            color: rgba(255, 102, 0, 0.4);
+            margin-bottom: 5px;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .tag {
+            background: rgba(255, 102, 0, 0.1);
+            border: 1px solid rgba(255, 102, 0, 0.25);
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.65rem;
+            color: var(--hud-secondary);
+        }
+
+        .tag.green {
+            background: rgba(0, 255, 68, 0.1);
+            border-color: rgba(0, 255, 68, 0.3);
+            color: var(--hud-success);
+        }
+
+        .tag.purple {
+            background: rgba(200, 100, 255, 0.1);
+            border-color: rgba(200, 100, 255, 0.3);
+            color: #c864ff;
+        }
+
+        /* RIGHT PANEL */
+        .right-panel {
+            top: 100px;
+            right: 20px;
+            width: 260px;
+            bottom: 100px;
+            padding: 12px;
+            overflow-y: auto;
+            border-right: 2px solid var(--hud-primary);
+        }
+
+        .metric-block {
+            margin-bottom: 12px;
+        }
+
+        .metric-title {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 102, 0, 0.4);
+            margin-bottom: 4px;
+        }
+
+        .metric-big {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6rem;
+            color: var(--hud-success);
+            text-shadow: 0 0 10px rgba(0, 255, 68, 0.4);
+        }
+
+        .metric-bar-bg {
+            height: 5px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 2px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+
+        .metric-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--hud-accent), var(--hud-secondary));
+            box-shadow: 0 0 8px var(--hud-glow);
+            transition: width 0.5s ease;
+        }
+
+        .emotion-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .emotion-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 102, 0, 0.15);
+            padding: 8px;
+            text-align: center;
+            border-radius: 4px;
+        }
+
+        .emotion-icon {
+            font-size: 1.3rem;
+        }
+
+        .emotion-who {
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.3);
+            text-transform: uppercase;
+        }
+
+        .emotion-state {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--hud-success);
+        }
+
+        /* BOTTOM - Transcript */
+        .bottom-center {
+            bottom: 20px;
+            left: 290px;
+            right: 300px;
+            height: 180px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 2px solid var(--hud-primary);
+        }
+
+        .transcript-scroll {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .transcript-line {
+            padding: 6px 10px;
+            margin-bottom: 5px;
+            border-left: 2px solid;
+            background: rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .transcript-line.agent {
+            border-color: var(--hud-secondary);
+        }
+
+        .transcript-line.lead {
+            border-color: var(--hud-success);
+        }
+
+        .transcript-speaker {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .transcript-line.agent .transcript-speaker {
+            color: var(--hud-secondary);
+        }
+
+        .transcript-line.lead .transcript-speaker {
+            color: var(--hud-success);
+        }
+
+        .transcript-text {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        /* COACHING */
+        .coaching-float {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 50, 0, 0.15);
+            border: 2px solid var(--hud-accent);
+            padding: 18px 28px;
+            border-radius: 6px;
+            text-align: center;
+            max-width: 450px;
+            animation: coachGlow 2s infinite;
+            z-index: 50;
+            cursor: pointer;
+        }
+
+        @keyframes coachGlow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 15px rgba(255, 50, 0, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 35px rgba(255, 50, 0, 0.6), 0 0 50px rgba(255, 50, 0, 0.2);
+            }
+        }
+
+        .coaching-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            color: var(--hud-accent);
+            margin-bottom: 6px;
+            letter-spacing: 2px;
+        }
+
+        .coaching-text {
+            font-size: 1rem;
+            color: #fff;
+            line-height: 1.4;
+        }
+
+        /* Quick bar */
+        .quick-bar {
+            position: fixed;
+            bottom: 215px;
+            left: 290px;
+            right: 300px;
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 8px 0;
+        }
+
+        .quick-btn {
+            background: rgba(255, 102, 0, 0.1);
+            border: 1px solid rgba(255, 102, 0, 0.25);
+            color: var(--hud-secondary);
+            padding: 6px 14px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        .quick-btn:hover {
+            background: rgba(255, 102, 0, 0.25);
+            box-shadow: 0 0 12px var(--hud-glow);
+            transform: translateY(-2px);
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 102, 0, 0.25);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-layer"></div>
+    <div class="grid-overlay"></div>
+
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
+
+    <!-- TOP -->
+    <div class="glass-panel top-center">
+        <div>
+            <div style="font-size: 0.6rem; color: rgba(255,102,0,0.4); text-transform: uppercase;">Duration</div>
+            <div class="call-timer" id="timer">04:32</div>
+        </div>
+        <div class="divider"></div>
+        <div class="confidence-display">
+            <div class="confidence-label">Close %</div>
+            <div class="confidence-value" id="confidence">67%</div>
+        </div>
+        <div class="divider"></div>
+        <div class="status-live">
+            <div class="pulse-dot"></div>
+            <span style="color: #ff4444; font-size: 0.85rem; font-weight: 600;">REC</span>
+        </div>
+    </div>
+
+    <!-- LEFT -->
+    <div class="glass-panel left-panel">
+        <div class="panel-header">Target Profile</div>
+        <div class="avatar-ring">👤</div>
+        <div class="lead-name">Michael Thompson</div>
+        <div class="lead-company">Thompson Auto Parts LLC</div>
+
+        <div class="data-row"><span class="data-label">Revenue</span><span class="data-value">$2.5M</span></div>
+        <div class="data-row"><span class="data-label">Employees</span><span class="data-value">12</span></div>
+        <div class="data-row"><span class="data-label">Current Rate</span><span class="data-value"
+                style="color: #ffaa00;">2.9%</span></div>
+        <div class="data-row"><span class="data-label">Monthly Vol</span><span class="data-value">$45K</span></div>
+
+        <div class="tag-section">
+            <div class="tag-section-title">Interests</div>
+            <div class="tags">
+                <span class="tag green">Classic Cars</span>
+                <span class="tag green">Golf</span>
+                <span class="tag green">Patriots</span>
+            </div>
+        </div>
+
+        <div class="tag-section">
+            <div class="tag-section-title">Personal</div>
+            <div class="tags">
+                <span class="tag purple">Dog: Max</span>
+                <span class="tag purple">2 Kids</span>
+            </div>
+        </div>
+
+        <div class="tag-section">
+            <div class="tag-section-title">Personality</div>
+            <div class="tags">
+                <span class="tag">Detail-oriented</span>
+                <span class="tag">Likes numbers</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="glass-panel right-panel">
+        <div class="panel-header">Live Analytics</div>
+
+        <div class="metric-block">
+            <div class="metric-title">Engagement</div>
+            <div class="metric-big">78%</div>
+            <div class="metric-bar-bg">
+                <div class="metric-bar-fill" style="width: 78%;"></div>
+            </div>
+        </div>
+
+        <div class="metric-block">
+            <div class="metric-title">Talk Ratio</div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-top: 4px;">
+                <span style="color: var(--hud-secondary);">You: 62%</span>
+                <span style="color: var(--hud-success);">Lead: 38%</span>
+            </div>
+        </div>
+
+        <div class="metric-block">
+            <div class="metric-title">Silence Timer</div>
+            <div class="metric-big" style="color: var(--hud-warning);" id="silence">12s</div>
+        </div>
+
+        <div class="metric-block">
+            <div class="metric-title">Emotional Read</div>
+            <div class="emotion-grid">
+                <div class="emotion-box">
+                    <div class="emotion-icon">😌</div>
+                    <div class="emotion-who">You</div>
+                    <div class="emotion-state">Confident</div>
+                </div>
+                <div class="emotion-box">
+                    <div class="emotion-icon">🤔</div>
+                    <div class="emotion-who">Lead</div>
+                    <div class="emotion-state" style="color: var(--hud-warning);">Hesitant</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="metric-block">
+            <div class="metric-title">Interest Points</div>
+            <div style="font-size: 0.8rem; color: var(--hud-success); padding-left: 8px;">
+                ✓ Cost savings<br>✓ Ease of use
+            </div>
+        </div>
+
+        <div class="metric-block">
+            <div class="metric-title">Objections</div>
+            <div style="font-size: 0.8rem; color: var(--hud-warning); padding-left: 8px;">
+                ⚠ Switching hassle
+            </div>
+        </div>
+    </div>
+
+    <!-- COACHING -->
+    <div class="coaching-float" id="coaching" onclick="this.style.display='none'">
+        <div class="coaching-label">⚡ Tactical Suggestion</div>
+        <div class="coaching-text">He said "hassle" — pivot NOW.<br>Mention white-glove transition service.</div>
+    </div>
+
+    <!-- QUICK QUESTIONS -->
+    <div class="quick-bar">
+        <button class="quick-btn">💬 "How long in business?"</button>
+        <button class="quick-btn">💬 "Busiest season?"</button>
+        <button class="quick-btn">💬 "Growth plans?"</button>
+        <button class="quick-btn">🐕 "How's Max?"</button>
+    </div>
+
+    <!-- TRANSCRIPT -->
+    <div class="glass-panel bottom-center">
+        <div class="transcript-scroll" id="transcript">
+            <div class="transcript-line agent">
+                <div class="transcript-speaker">You</div>
+                <div class="transcript-text">Hi Michael! How's Square been working out for the auto parts business?
+                </div>
+            </div>
+            <div class="transcript-line lead">
+                <div class="transcript-speaker">Lead</div>
+                <div class="transcript-text">Yeah, it's okay I guess. Fees are high but it's easy.</div>
+            </div>
+            <div class="transcript-line agent">
+                <div class="transcript-speaker">You</div>
+                <div class="transcript-text">What if we kept the simplicity but cut fees 40%? That's $5,400 back
+                    annually.</div>
+            </div>
+            <div class="transcript-line lead">
+                <div class="transcript-speaker">Lead</div>
+                <div class="transcript-text">Interesting... but switching sounds like a hassle.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let seconds = 272;
+        setInterval(() => {
+            seconds++;
+            document.getElementById('timer').textContent =
+                Math.floor(seconds / 60).toString().padStart(2, '0') + ':' + (seconds % 60).toString().padStart(2, '0');
+        }, 1000);
+
+        let conf = 67;
+        setInterval(() => {
+            conf += (Math.random() - 0.4) * 3;
+            conf = Math.max(30, Math.min(95, conf));
+            const el = document.getElementById('confidence');
+            el.textContent = Math.round(conf) + '%';
+            el.style.color = conf > 70 ? '#00ff44' : conf > 50 ? '#ffcc00' : '#ff4444';
+        }, 3000);
+
+        let sil = 12;
+        setInterval(() => {
+            sil++;
+            const el = document.getElementById('silence');
+            el.textContent = sil + 's';
+            el.style.color = sil > 30 ? '#ff4444' : sil > 20 ? '#ffcc00' : '#ffaa00';
+        }, 1000);
+    </script>
+</body>
+
+</html>

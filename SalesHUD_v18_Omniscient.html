@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD v18 - OMNISCIENT</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Teko:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-dark: #020408;
+            --glass-panel: rgba(10, 25, 40, 0.75);
+            --glass-border: rgba(0, 255, 200, 0.2);
+            --accent-main: #00ffc8;
+            /* Cyber Mint */
+            --accent-warn: #ffb800;
+            /* Amber */
+            --accent-danger: #ff0055;
+            /* Crimson */
+            --accent-info: #00aaff;
+            /* Azure */
+
+            --drawer-width: 300px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scrollbar-width: none;
+        }
+
+        ::-webkit-scrollbar {
+            width: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            /* Dense grid background */
+            background-image:
+                linear-gradient(rgba(0, 255, 200, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 200, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: #fff;
+            font-family: 'Teko', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* --- DRAWERS --- */
+        .drawer {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            width: var(--drawer-width);
+            background: rgba(0, 10, 15, 0.95);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            z-index: 100;
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .drawer-left {
+            left: 0;
+            transform: translateX(-280px);
+            border-right: 2px solid var(--accent-info);
+        }
+
+        .drawer-right {
+            right: 0;
+            transform: translateX(280px);
+            border-left: 2px solid var(--accent-warn);
+        }
+
+        .drawer:hover {
+            transform: translateX(0);
+        }
+
+        .drawer-tab {
+            position: absolute;
+            top: 50%;
+            width: 20px;
+            height: 100px;
+            background: #222;
+            border: 1px solid var(--glass-border);
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+        }
+
+        .dl-tab {
+            right: -21px;
+            background: var(--accent-info);
+            color: #000;
+            font-weight: 700;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .dr-tab {
+            left: -21px;
+            background: var(--accent-warn);
+            color: #000;
+            font-weight: 700;
+            border-radius: 5px 0 0 5px;
+        }
+
+        .drawer-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--glass-border);
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .drawer-content {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono';
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .battle-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 3px solid var(--accent-warn);
+        }
+
+        .bc-title {
+            color: #fff;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .hist-entry {
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #333;
+            padding-bottom: 5px;
+        }
+
+
+        /* --- MAIN VIEWPORT --- */
+        .viewport {
+            flex: 1;
+            margin: 0 20px;
+            /* Space for drawers peeking */
+            display: grid;
+            grid-template-columns: 280px 1fr 280px;
+            grid-template-rows: 60px 1fr 200px;
+            gap: 8px;
+            padding: 10px;
+        }
+
+        /* --- MODULES --- */
+        .mod {
+            background: var(--glass-panel);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .mod-h {
+            background: rgba(0, 255, 200, 0.1);
+            padding: 4px 8px;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            color: var(--accent-main);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .mod-b {
+            flex: 1;
+            overflow: hidden;
+            padding: 8px;
+            position: relative;
+        }
+
+        /* --- TOP BAR --- */
+        .top-deck {
+            grid-column: 1 / 4;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--glass-panel);
+            border: 1px solid var(--glass-border);
+            padding: 0 20px;
+        }
+
+        .sys-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .sys-title span {
+            color: var(--accent-main);
+        }
+
+        .stat-cluster {
+            display: flex;
+            gap: 20px;
+        }
+
+        .mini-stat {
+            text-align: center;
+        }
+
+        .ms-lbl {
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .ms-val {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        /* --- LEFT COL (METRICS) --- */
+        .col-left {
+            grid-row: 2 / 4;
+            display: grid;
+            grid-template-rows: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+
+        /* Gauges */
+        .gauge-row {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 100%;
+        }
+
+        .circ-gauge {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--accent-main);
+            display: grid;
+            place-items: center;
+        }
+
+        .cg-val {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .cg-lbl {
+            position: absolute;
+            bottom: 5px;
+            font-size: 0.7rem;
+            width: 100%;
+            text-align: center;
+        }
+
+        .bar-metric {
+            margin-bottom: 8px;
+        }
+
+        .bm-lbl {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 2px;
+        }
+
+        .bm-track {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .bm-fill {
+            height: 100%;
+            background: var(--accent-info);
+            width: 50%;
+            transition: width 0.3s;
+        }
+
+
+        /* --- CENTER (STREAM & CHEATS) --- */
+        .col-center {
+            grid-row: 2 / 3;
+            display: grid;
+            grid-template-rows: 1fr 180px;
+            gap: 8px;
+        }
+
+        .transcript-mod {
+            font-family: 'JetBrains Mono';
+            font-size: 0.85rem;
+            line-height: 1.6;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .tr-line {
+            margin-bottom: 8px;
+            padding-left: 10px;
+            border-left: 2px solid transparent;
+        }
+
+        .tr-me {
+            border-color: var(--accent-main);
+            color: #ccc;
+        }
+
+        .tr-them {
+            border-color: var(--accent-warn);
+            color: #fff;
+            background: rgba(255, 184, 0, 0.05);
+        }
+
+        .cheat-mod {
+            border: 1px solid var(--accent-main);
+            background: rgba(0, 255, 200, 0.05);
+        }
+
+        .cheat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .cheat-btn {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--accent-main);
+            color: var(--accent-main);
+            padding: 5px;
+            text-align: center;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cheat-btn:hover {
+            background: var(--accent-main);
+            color: #000;
+        }
+
+
+        /* --- RIGHT COL (TACTICS) --- */
+        .col-right {
+            grid-row: 2 / 4;
+            display: grid;
+            grid-template-rows: 200px 1fr 150px;
+            gap: 8px;
+        }
+
+        .map-wrapper {
+            position: relative;
+            height: 100%;
+            background-image: radial-gradient(#333 1px, transparent 1px);
+            background-size: 10px 10px;
+        }
+
+        .map-path {
+            position: absolute;
+            top: 10%;
+            bottom: 10%;
+            left: 50%;
+            width: 2px;
+            background: #333;
+        }
+
+        .map-node {
+            width: 12px;
+            height: 12px;
+            background: #222;
+            border: 2px solid #555;
+            border-radius: 50%;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .mn-active {
+            background: var(--accent-main);
+            border-color: #fff;
+            box-shadow: 0 0 10px var(--accent-main);
+        }
+
+        .pbd-stack {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            justify-content: space-between;
+        }
+
+        .pbd-row {
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 3px solid #555;
+            font-size: 0.9rem;
+        }
+
+        .pbd-row.on {
+            border-color: var(--accent-warn);
+            background: rgba(255, 184, 0, 0.1);
+            color: var(--accent-warn);
+            font-weight: 700;
+        }
+
+
+        /* --- BOTTOM --- */
+        .bottom-deck {
+            grid-column: 2 / 3;
+            grid-row: 3;
+            display: grid;
+            grid-template-columns: 100px 1fr 100px;
+            gap: 8px;
+        }
+
+        .mic-box {
+            background: black;
+            border: 1px solid var(--accent-main);
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            font-size: 2rem;
+            color: var(--accent-main);
+        }
+
+        .mic-box:hover {
+            background: var(--accent-main);
+            color: #000;
+        }
+
+        .mic-box.live {
+            background: var(--accent-danger);
+            border-color: var(--accent-danger);
+            color: #fff;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .coach-big {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(90deg, rgba(0, 0, 0, 0.5), rgba(0, 255, 200, 0.1), rgba(0, 0, 0, 0.5));
+            border-top: 1px solid var(--accent-main);
+            border-bottom: 1px solid var(--accent-main);
+        }
+
+        .coach-main {
+            font-size: 2rem;
+            color: #fff;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .coach-sub {
+            color: var(--accent-main);
+            font-size: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- LEFT DRAWER: DEEP HISTORY -->
+    <div class="drawer drawer-left">
+        <div class="drawer-tab dl-tab">HISTORY</div>
+        <div class="drawer-header">
+            <span>DEEP CONTEXT</span> <span>📂</span>
+        </div>
+        <div class="drawer-content">
+            <div class="battle-card" style="border-color:var(--accent-info);">
+                <div class="bc-title">LAST INTERACTION</div>
+                <div>Date: Dec 12, 2025</div>
+                <div>Outcome: "Sent Proposal"</div>
+                <div>Note: "Concerned about integration time."</div>
+            </div>
+            <div class="hist-entry">
+                <strong>Email (Nov 20):</strong> Asked about API limits.
+            </div>
+            <div class="hist-entry">
+                <strong>LinkedIn:</strong> Liked post about "AI Efficiency".
+            </div>
+            <br>
+            <div class="bc-title">PSYCH PROFILE</div>
+            <div>• Analytical Decision Maker</div>
+            <div>• Needs social proof / case studies</div>
+            <div>• Risk averse</div>
+        </div>
+    </div>
+
+    <!-- RIGHT DRAWER: BATTLECARDS -->
+    <div class="drawer drawer-right">
+        <div class="drawer-tab dr-tab">BATTLE</div>
+        <div class="drawer-header">
+            <span>BATTLECARDS</span> <span>⚔️</span>
+        </div>
+        <div class="drawer-content">
+            <div class="battle-card">
+                <div class="bc-title">VS. COMPETITOR X</div>
+                <div>• Their price is 20% higher</div>
+                <div>• They lack real-time AI</div>
+                <div>• Kill shot: "Ask about their downtime."</div>
+            </div>
+            <div class="battle-card">
+                <div class="bc-title">PRICING DEFENSE</div>
+                <div>• "We are an investment, not a cost."</div>
+                <div>• Break down ROI per month ($5k saved).</div>
+            </div>
+            <div class="battle-card" style="border-color:var(--accent-danger);">
+                <div class="bc-title">OBJECTION: "NOT NOW"</div>
+                <div>1. Acknowledge busy-ness</div>
+                <div>2. "What changes in Q2?"</div>
+                <div>3. Offer pilot program</div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MAIN HUD -->
+    <div class="viewport">
+
+        <!-- TOP DECK -->
+        <div class="top-deck">
+            <div class="sys-title">OMNI<span>SCIENT</span> // v18</div>
+            <div class="stat-cluster">
+                <div class="mini-stat">
+                    <div class="ms-lbl">TIME ELAPSED</div>
+                    <div class="ms-val" id="timer">00:00</div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-lbl">CONFIDENCE</div>
+                    <div class="ms-val" style="color:var(--accent-main);" id="confBig">0%</div>
+                </div>
+                <div class="mini-stat">
+                    <div class="ms-lbl">WPM</div>
+                    <div class="ms-val">145</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEFT COL -->
+        <div class="col-left">
+            <div class="mod">
+                <div class="mod-h"><span>ENGAGEMENT METRICS</span></div>
+                <div class="mod-b">
+                    <div class="gauge-row">
+                        <div style="position:relative; width:70px; height:70px;">
+                            <div class="circ-gauge" style="border-top-color:var(--accent-main);" id="g-health"><span
+                                    class="cg-val">90</span></div>
+                            <div class="cg-lbl">HEALTH</div>
+                        </div>
+                        <div style="position:relative; width:70px; height:70px;">
+                            <div class="circ-gauge" style="border-top-color:var(--accent-warn);" id="g-sent"><span
+                                    class="cg-val">--</span></div>
+                            <div class="cg-lbl">SENTIMENT</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mod">
+                <div class="mod-h"><span>FLOW METRICS</span></div>
+                <div class="mod-b">
+                    <div class="bar-metric">
+                        <div class="bm-lbl"><span>PACE</span> <span>OK</span></div>
+                        <div class="bm-track">
+                            <div class="bm-fill" style="width:60%;"></div>
+                        </div>
+                    </div>
+                    <div class="bar-metric">
+                        <div class="bm-lbl"><span>PATIENCE</span> <span>HIGH</span></div>
+                        <div class="bm-track">
+                            <div class="bm-fill" style="width:90%; background:var(--accent-success);"></div>
+                        </div>
+                    </div>
+                    <div class="bar-metric">
+                        <div class="bm-lbl"><span>INTERRUPTION</span> <span>LOW</span></div>
+                        <div class="bm-track">
+                            <div class="bm-fill" style="width:10%; background:var(--accent-main);"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mod">
+                <div class="mod-h"><span>DOMINANCE SPLIT</span></div>
+                <div class="mod-b" style="display:flex; flex-direction:column; justify-content:center;">
+                    <div class="bm-lbl"><span>YOU (Leader)</span> <span>THEM</span></div>
+                    <div style="height:20px; display:flex; border:1px solid #333;">
+                        <div style="background:var(--accent-main); width:55%; transition:width 0.5s;" id="domYou"></div>
+                        <div style="background:var(--accent-warn); width:45%; transition:width 0.5s;" id="domThem">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER -->
+        <div class="col-center">
+            <div class="mod">
+                <div class="mod-h"><span>LIVE TRANSCRIPT STREAM</span> <span>REC ●</span></div>
+                <div class="mod-b transcript-mod" id="term">
+                    <div style="text-align:center; color:#666; padding-top:20px;">-- SYSTEM READY --<br>WAITING FOR
+                        AUDIO...</div>
+                </div>
+            </div>
+
+            <div class="mod cheat-mod">
+                <div class="mod-h" style="background:var(--accent-main); color:#000;"><span>CHEAT CODES // TACTICAL
+                        OVERRIDES</span></div>
+                <div class="mod-b cheat-grid">
+                    <div class="cheat-btn">ASK OPEN ENDED Q</div>
+                    <div class="cheat-btn">MIRROR LAST 3 WORDS</div>
+                    <div class="cheat-btn">LABEL EMOTION</div>
+                    <div class="cheat-btn" style="border-color:var(--accent-danger); color:var(--accent-danger);">USE
+                        SILENCE</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="col-right">
+            <div class="mod">
+                <div class="mod-h"><span>SALES ORBIT</span></div>
+                <div class="mod-b map-wrapper">
+                    <div class="map-path"></div>
+                    <div class="map-node mn-active" style="top:10%;" id="n-intro"></div>
+                    <div style="position:absolute; top:10%; left:60%; font-size:0.7rem;">INTRO</div>
+                    <div class="map-node" style="top:35%;" id="n-disc"></div>
+                    <div style="position:absolute; top:35%; left:60%; font-size:0.7rem;">DISCOVERY</div>
+                    <div class="map-node" style="top:60%;" id="n-pitch"></div>
+                    <div style="position:absolute; top:60%; left:60%; font-size:0.7rem;">PITCH</div>
+                    <div class="map-node" style="top:85%;" id="n-close"></div>
+                    <div style="position:absolute; top:85%; left:60%; font-size:0.7rem;">CLOSE</div>
+                </div>
+            </div>
+
+            <div class="mod">
+                <div class="mod-h"><span>PBD MINDSET</span></div>
+                <div class="mod-b pbd-stack">
+                    <div class="pbd-row" id="pb-surv">1. SURVIVAL</div>
+                    <div class="pbd-row" id="pb-sec">2. SECURITY</div>
+                    <div class="pbd-row" id="pb-suc">3. SUCCESS</div>
+                    <div class="pbd-row" id="pb-sig">4. SIGNIFICANCE</div>
+                </div>
+            </div>
+
+            <div class="mod">
+                <div class="mod-h"><span>AMMO INVENTORY</span></div>
+                <div class="mod-b" style="display:flex; align-items:center; justify-content:center;">
+                    <div style="font-size:3rem; font-weight:700; color:var(--accent-main);" id="ammoBig">30</div>
+                    <div style="margin-left:10px; font-size:0.8rem; color:#888;">ROUNDS<br>REMAINING</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM -->
+        <div class="bottom-deck">
+            <div class="mic-box" id="mic" onclick="toggleMic()">🎙️</div>
+
+            <div class="coach-big">
+                <div class="coach-sub">AI COACH SUGGESTION</div>
+                <div class="coach-main" id="coachText">BUILD RAPPORT</div>
+            </div>
+
+            <div class="mod" style="display:grid; place-items:center; background:#000;">
+                <div style="font-size:2rem;">🛑</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:47293/api/analyze/sales-call";
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let isListening = false;
+        let fullTranscript = "";
+        let sec = 0; let tInt;
+
+        function toggleMic() {
+            if (!SpeechRecognition) { alert("Use Chrome"); return; }
+            let m = document.getElementById('mic');
+
+            if (isListening) {
+                isListening = false; recognition.stop(); clearInterval(tInt);
+                m.classList.remove('live');
+            } else {
+                isListening = true;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.onresult = proc;
+                recognition.onend = () => { if (isListening) recognition.start(); };
+                recognition.start();
+                m.classList.add('live');
+
+                // Clear initial holder
+                if (document.getElementById('term').innerText.includes("SYSTEM")) {
+                    document.getElementById('term').innerHTML = "";
+                }
+
+                tInt = setInterval(() => {
+                    sec++;
+                    let mm = Math.floor(sec / 60).toString().padStart(2, '0');
+                    let ss = (sec % 60).toString().padStart(2, '0');
+                    document.getElementById('timer').innerText = `${mm}:${ss}`;
+                }, 1000);
+            }
+        }
+
+        async function proc(e) {
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+                if (e.results[i].isFinal) {
+                    let txt = e.results[i][0].transcript;
+                    fullTranscript += txt + " ";
+
+                    let d = document.createElement('div');
+                    d.className = 'tr-line ' + (txt.split(' ').length > 6 ? 'tr-me' : 'tr-them');
+                    d.innerText = txt;
+                    let t = document.getElementById('term');
+                    t.appendChild(d); t.scrollTop = t.scrollHeight;
+
+                    try {
+                        let r = await fetch(API_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ transcript: fullTranscript })
+                        });
+                        let data = await r.json();
+                        if (data.success) render(data);
+                    } catch (err) { }
+                }
+            }
+        }
+
+        function render(d) {
+            if (d.confidence_score) {
+                document.getElementById('confBig').innerText = d.confidence_score + "%";
+                updateMap(d.confidence_score);
+            }
+            if (d.health_level) document.getElementById('g-health').innerHTML = `<span class="cg-val">${d.health_level}</span>`;
+            if (d.sentiment) {
+                let s = d.sentiment == 'positive' ? 'POS' : (d.sentiment == 'negative' ? 'NEG' : 'NEU');
+                document.getElementById('g-sent').innerHTML = `<span class="cg-val" style="color:${s == 'POS' ? 'var(--accent-main)' : '#fff'}">${s}</span>`;
+            }
+
+            if (d.dominance_split) {
+                // Sim if not in detector
+            }
+
+            if (d.pbd_mindset) {
+                document.querySelectorAll('.pbd-row').forEach(r => r.classList.remove('on'));
+                let k = 'pb-' + d.pbd_mindset.substr(0, 3).toLowerCase();
+                if (document.getElementById(k)) document.getElementById(k).classList.add('on');
+            }
+
+            if (d.coaching_tip) document.getElementById('coachText').innerText = d.coaching_tip;
+            if (d.ammo_remaining) document.getElementById('ammoBig').innerText = d.ammo_remaining;
+        }
+
+        function updateMap(score) {
+            document.querySelectorAll('.map-node').forEach(n => n.classList.remove('mn-active'));
+            let id = 'n-intro';
+            if (score > 25) id = 'n-disc';
+            if (score > 50) id = 'n-pitch';
+            if (score > 80) id = 'n-close';
+            document.getElementById(id).classList.add('mn-active');
+        }
+
+    </script>
+</body>
+
+</html>

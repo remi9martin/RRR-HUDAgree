@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD - RRR-HUDAgree</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap');
+
+        :root {
+            --hud-primary: #8a8a8a;
+            --hud-secondary: #c0c0c0;
+            --hud-accent: #ffffff;
+            --hud-success: #4ade80;
+            --hud-warning: #fbbf24;
+            --hud-danger: #ef4444;
+            --gunmetal: #2a2d32;
+            --gunmetal-dark: #1a1c20;
+            --gunmetal-light: #3d4147;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--gunmetal-dark);
+            color: var(--hud-secondary);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Subtle texture */
+        .bg-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(255, 255, 255, 0.01) 0%, transparent 50%),
+                linear-gradient(135deg, #0d0e10 0%, #1a1c20 50%, #0d0e10 100%);
+            z-index: -2;
+        }
+
+        /* Very subtle grid */
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.01) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.01) 1px, transparent 1px);
+            background-size: 80px 80px;
+            z-index: -1;
+        }
+
+        /* Corner brackets - minimal */
+        .corner {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            z-index: 100;
+        }
+
+        .corner::before,
+        .corner::after {
+            content: '';
+            position: absolute;
+        }
+
+        .corner-tl {
+            top: 12px;
+            left: 12px;
+        }
+
+        .corner-tl::before {
+            width: 40px;
+            height: 1px;
+            top: 0;
+            left: 0;
+            background: linear-gradient(90deg, var(--hud-primary), transparent);
+        }
+
+        .corner-tl::after {
+            width: 1px;
+            height: 40px;
+            top: 0;
+            left: 0;
+            background: linear-gradient(180deg, var(--hud-primary), transparent);
+        }
+
+        .corner-tr {
+            top: 12px;
+            right: 12px;
+        }
+
+        .corner-tr::before {
+            width: 40px;
+            height: 1px;
+            top: 0;
+            right: 0;
+            background: linear-gradient(-90deg, var(--hud-primary), transparent);
+        }
+
+        .corner-tr::after {
+            width: 1px;
+            height: 40px;
+            top: 0;
+            right: 0;
+            background: linear-gradient(180deg, var(--hud-primary), transparent);
+        }
+
+        .corner-bl {
+            bottom: 12px;
+            left: 12px;
+        }
+
+        .corner-bl::before {
+            width: 40px;
+            height: 1px;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(90deg, var(--hud-primary), transparent);
+        }
+
+        .corner-bl::after {
+            width: 1px;
+            height: 40px;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(0deg, var(--hud-primary), transparent);
+        }
+
+        .corner-br {
+            bottom: 12px;
+            right: 12px;
+        }
+
+        .corner-br::before {
+            width: 40px;
+            height: 1px;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(-90deg, var(--hud-primary), transparent);
+        }
+
+        .corner-br::after {
+            width: 1px;
+            height: 40px;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(0deg, var(--hud-primary), transparent);
+        }
+
+        /* Glass panels - gunmetal */
+        .glass-panel {
+            background: rgba(42, 45, 50, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            position: absolute;
+        }
+
+        /* TOP CENTER */
+        .top-center {
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 30px;
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .call-timer {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            color: var(--hud-accent);
+            letter-spacing: 2px;
+        }
+
+        .divider {
+            width: 1px;
+            height: 35px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .confidence-display {
+            text-align: center;
+        }
+
+        .confidence-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.35);
+        }
+
+        .confidence-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6rem;
+            color: var(--hud-success);
+        }
+
+        .status-live {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--hud-danger);
+            border-radius: 50%;
+            animation: pulseDot 1s infinite;
+        }
+
+        @keyframes pulseDot {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        /* LEFT PANEL */
+        .left-panel {
+            top: 80px;
+            left: 15px;
+            width: 240px;
+            bottom: 80px;
+            padding: 12px;
+            overflow-y: auto;
+        }
+
+        .panel-header {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--hud-primary);
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .avatar-ring {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 8px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .lead-name {
+            text-align: center;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .lead-company {
+            text-align: center;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.35);
+            margin-bottom: 12px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.75rem;
+        }
+
+        .data-label {
+            color: rgba(255, 255, 255, 0.35);
+        }
+
+        .data-value {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .tag-section {
+            margin-top: 10px;
+        }
+
+        .tag-section-title {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.25);
+            margin-bottom: 4px;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+        }
+
+        .tag {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2px 7px;
+            border-radius: 2px;
+            font-size: 0.6rem;
+            color: var(--hud-secondary);
+        }
+
+        .tag.green {
+            color: var(--hud-success);
+            border-color: rgba(74, 222, 128, 0.2);
+        }
+
+        .tag.purple {
+            color: #c084fc;
+            border-color: rgba(192, 132, 252, 0.2);
+        }
+
+        .tag.orange {
+            color: var(--hud-warning);
+            border-color: rgba(251, 191, 36, 0.2);
+        }
+
+        /* RIGHT PANEL */
+        .right-panel {
+            top: 80px;
+            right: 15px;
+            width: 250px;
+            bottom: 80px;
+            padding: 12px;
+            overflow-y: auto;
+        }
+
+        .metric-block {
+            margin-bottom: 12px;
+        }
+
+        .metric-title {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 3px;
+        }
+
+        .metric-big {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            color: var(--hud-success);
+        }
+
+        .metric-bar-bg {
+            height: 4px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 2px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+
+        .metric-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--hud-primary), var(--hud-secondary));
+            transition: width 0.5s ease;
+        }
+
+        .emotion-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+        }
+
+        .emotion-box {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 8px;
+            text-align: center;
+            border-radius: 3px;
+        }
+
+        .emotion-icon {
+            font-size: 1.2rem;
+        }
+
+        .emotion-who {
+            font-size: 0.55rem;
+            color: rgba(255, 255, 255, 0.25);
+            text-transform: uppercase;
+        }
+
+        .emotion-state {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--hud-success);
+        }
+
+        /* BOTTOM - Transcript */
+        .bottom-center {
+            bottom: 15px;
+            left: 270px;
+            right: 280px;
+            height: 170px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .transcript-scroll {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .transcript-line {
+            padding: 5px 10px;
+            margin-bottom: 4px;
+            border-left: 2px solid;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .transcript-line.agent {
+            border-color: var(--hud-secondary);
+        }
+
+        .transcript-line.lead {
+            border-color: var(--hud-success);
+        }
+
+        .transcript-speaker {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            margin-bottom: 1px;
+        }
+
+        .transcript-line.agent .transcript-speaker {
+            color: var(--hud-secondary);
+        }
+
+        .transcript-line.lead .transcript-speaker {
+            color: var(--hud-success);
+        }
+
+        .transcript-text {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* COACHING */
+        .coaching-float {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 16px 24px;
+            border-radius: 4px;
+            text-align: center;
+            max-width: 420px;
+            z-index: 50;
+            cursor: pointer;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .coaching-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.65rem;
+            color: var(--hud-warning);
+            margin-bottom: 6px;
+            letter-spacing: 2px;
+        }
+
+        .coaching-text {
+            font-size: 0.95rem;
+            color: #fff;
+            line-height: 1.4;
+        }
+
+        /* Quick bar */
+        .quick-bar {
+            position: fixed;
+            bottom: 200px;
+            left: 270px;
+            right: 280px;
+            display: flex;
+            gap: 5px;
+            overflow-x: auto;
+            padding: 6px 0;
+        }
+
+        .quick-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--hud-secondary);
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        .quick-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        ::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-layer"></div>
+    <div class="grid-overlay"></div>
+
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
+
+    <!-- TOP -->
+    <div class="glass-panel top-center">
+        <div>
+            <div style="font-size: 0.55rem; color: rgba(255,255,255,0.3); text-transform: uppercase;">Duration</div>
+            <div class="call-timer" id="timer">04:32</div>
+        </div>
+        <div class="divider"></div>
+        <div class="confidence-display">
+            <div class="confidence-label">Close %</div>
+            <div class="confidence-value" id="confidence">67%</div>
+        </div>
+        <div class="divider"></div>
+        <div class="status-live">
+            <div class="pulse-dot"></div>
+            <span style="color: #ef4444; font-size: 0.75rem; font-weight: 600;">REC</span>
+        </div>
+    </div>
+
+    <!-- LEFT -->
+    <div class="glass-panel left-panel">
+        <div class="panel-header">Target</div>
+        <div class="avatar-ring">👤</div>
+        <div class="lead-name">Michael Thompson</div>
+        <div class="lead-company">Thompson Auto Parts LLC</div>
+
+        <div class="data-row"><span class="data-label">Revenue</span><span class="data-value">$2.5M</span></div>
+        <div class="data-row"><span class="data-label">Employees</span><span class="data-value">12</span></div>
+        <div class="data-row"><span class="data-label">Rate</span><span class="data-value"
+                style="color: var(--hud-warning);">2.9%</span></div>
+        <div class="data-row"><span class="data-label">Volume</span><span class="data-value">$45K/mo</span></div>
+
+        <div class="tag-section">
+            <div class="tag-section-title">Interests</div>
+            <div class="tags">
+                <span class="tag green">Cars</span>
+                <span class="tag green">Golf</span>
+                <span class="tag green">Patriots</span>
+            </div>
+        </div>
+
+        <div class="tag-section">
+            <div class="tag-section-title">Personal</div>
+            <div class="tags">
+                <span class="tag purple">Dog: Max</span>
+                <span class="tag purple">2 Kids</span>
+            </div>
+        </div>
+
+        <div class="tag-section">
+            <div class="tag-section-title">Style</div>
+            <div class="tags">
+                <span class="tag orange">Detail-oriented</span>
+                <span class="tag orange">Numbers guy</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="glass-panel right-panel">
+        <div class="panel-header">Analytics</div>
+
+        <div class="metric-block">
+            <div class="metric-title">Engagement</div>
+            <div class="metric-big">78%</div>
+            <div class="metric-bar-bg">
+                <div class="metric-bar-fill" style="width: 78%;"></div>
+            </div>
+        </div>
+
+        <div class="metric-block">
+            <div class="metric-title">Talk Ratio</div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-top: 4px;">
+                <span style="color: var(--hud-secondary);">You: 62%</span>
+                <span style="color: var(--hud-success);">Lead: 38%</span>
+            </div>
+        </div>
+
+        <div class="metric-block">
+            <div class="metric-title">Silence</div>
+            <div class="metric-big" style="color: var(--hud-warning);" id="silence">12s</div>
+        </div>
+
+        <div class="metric-block">
+            <div class="metric-title">Emotion</div>
+            <div class="emotion-grid">
+                <div class="emotion-box">
+                    <div class="emotion-icon">😌</div>
+                    <div class="emotion-who">You</div>
+                    <div class="emotion-state">Confident</div>
+                </div>
+                <div class="emotion-box">
+                    <div class="emotion-icon">🤔</div>
+                    <div class="emotion-who">Lead</div>
+                    <div class="emotion-state" style="color: var(--hud-warning);">Hesitant</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="metric-block">
+            <div class="metric-title">Wins</div>
+            <div style="font-size: 0.75rem; color: var(--hud-success); padding-left: 6px;">
+                ✓ Cost savings<br>✓ Easy comparison
+            </div>
+        </div>
+
+        <div class="metric-block">
+            <div class="metric-title">Objections</div>
+            <div style="font-size: 0.75rem; color: var(--hud-warning); padding-left: 6px;">
+                ⚠ Switching hassle
+            </div>
+        </div>
+    </div>
+
+    <!-- COACHING -->
+    <div class="coaching-float" id="coaching" onclick="this.style.display='none'">
+        <div class="coaching-label">⚡ Action Required</div>
+        <div class="coaching-text">He said "hassle" — address switching concern.<br>Mention white-glove transition.
+        </div>
+    </div>
+
+    <!-- QUICK QUESTIONS -->
+    <div class="quick-bar">
+        <button class="quick-btn">💬 How long in business?</button>
+        <button class="quick-btn">💬 Busiest season?</button>
+        <button class="quick-btn">💬 Growth plans?</button>
+        <button class="quick-btn">🐕 How's Max?</button>
+    </div>
+
+    <!-- TRANSCRIPT -->
+    <div class="glass-panel bottom-center">
+        <div class="transcript-scroll">
+            <div class="transcript-line agent">
+                <div class="transcript-speaker">You</div>
+                <div class="transcript-text">Hi Michael! How's Square been working for the auto parts business?</div>
+            </div>
+            <div class="transcript-line lead">
+                <div class="transcript-speaker">Lead</div>
+                <div class="transcript-text">Yeah, it's okay. Fees are high but easy to use.</div>
+            </div>
+            <div class="transcript-line agent">
+                <div class="transcript-speaker">You</div>
+                <div class="transcript-text">What if we kept simplicity but cut fees 40%? That's $5,400 annually.</div>
+            </div>
+            <div class="transcript-line lead">
+                <div class="transcript-speaker">Lead</div>
+                <div class="transcript-text">Interesting... but switching sounds like a hassle.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let seconds = 272;
+        setInterval(() => {
+            seconds++;
+            document.getElementById('timer').textContent =
+                Math.floor(seconds / 60).toString().padStart(2, '0') + ':' + (seconds % 60).toString().padStart(2, '0');
+        }, 1000);
+
+        let conf = 67;
+        setInterval(() => {
+            conf += (Math.random() - 0.4) * 3;
+            conf = Math.max(30, Math.min(95, conf));
+            const el = document.getElementById('confidence');
+            el.textContent = Math.round(conf) + '%';
+            el.style.color = conf > 70 ? '#4ade80' : conf > 50 ? '#fbbf24' : '#ef4444';
+        }, 3000);
+
+        let sil = 12;
+        setInterval(() => {
+            sil++;
+            const el = document.getElementById('silence');
+            el.textContent = sil + 's';
+            el.style.color = sil > 30 ? '#ef4444' : sil > 20 ? '#fbbf24' : '#c0c0c0';
+        }, 1000);
+    </script>
+</body>
+
+</html>

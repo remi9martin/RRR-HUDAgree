@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD v11 - HYPER GLASS</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;500;600;700&family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --bg-deep: #020406;
+            --glass-surface: rgba(20, 30, 40, 0.25);
+            --glass-border: rgba(100, 220, 255, 0.2);
+            --glass-highlight: rgba(255, 255, 255, 0.1);
+            --neon-blue: #00f0ff;
+            --neon-pink: #ff0055;
+            --neon-gold: #ffd700;
+            --neon-green: #00ff9d;
+            --text-main: #e0faff;
+            --text-muted: #627d96;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: 'Rajdhani', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Starfield / Nebular BG */
+            background-image:
+                radial-gradient(circle at 20% 30%, #0d1a26 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, #1a0d1a 0%, transparent 40%),
+                linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8));
+            perspective: 1600px;
+        }
+
+        /* --- PARTICLES --- */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            background-image:
+                radial-gradient(#fff 1px, transparent 1px),
+                radial-gradient(#fff 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: 0 0, 25px 25px;
+            opacity: 0.1;
+            animation: drift 60s linear infinite;
+        }
+
+        @keyframes drift {
+            to {
+                transform: translateY(-50px);
+            }
+        }
+
+        /* --- MAIN GLASS CHASSIS --- */
+        .glass-chassis {
+            width: 96vw;
+            height: 94vh;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            box-shadow:
+                0 0 50px rgba(0, 240, 255, 0.05),
+                inset 0 0 100px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(12px);
+            transform: rotateX(1deg);
+            /* Subtle curve */
+            display: grid;
+            grid-template-columns: 340px 1fr 340px;
+            grid-template-rows: 90px 1fr 140px;
+            gap: 15px;
+            padding: 25px;
+            position: relative;
+        }
+
+        /* Reflection glint */
+        .glass-chassis::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent 40%, rgba(255, 255, 255, 0.05) 50%, transparent 60%);
+            pointer-events: none;
+            border-radius: 30px;
+        }
+
+        /* --- GLASS PANELS --- */
+        .g-panel {
+            background: var(--glass-surface);
+            border: 1px solid rgba(150, 200, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .g-panel:hover {
+            border-color: rgba(0, 240, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+        }
+
+        /* Header Style */
+        .g-head {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--neon-blue);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* --- TOP BAR: CONFIDENCE --- */
+        .top-deck {
+            grid-column: 1 / 4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+        }
+
+        .conf-module {
+            flex: 1;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .conf-track-glass {
+            width: 100%;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            display: flex;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .seg {
+            flex: 1;
+            border-right: 1px solid rgba(0, 0, 0, 0.5);
+            background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.05));
+            transition: all 0.4s;
+        }
+
+        .seg.fill {
+            background: linear-gradient(to bottom, var(--neon-blue), var(--neon-green));
+            opacity: 0.8;
+            box-shadow: 0 0 15px var(--neon-blue);
+        }
+
+        .seg.risk {
+            background: linear-gradient(to bottom, var(--neon-pink), red);
+        }
+
+        .conf-val {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 20px var(--neon-blue);
+            margin-top: 5px;
+        }
+
+        /* --- LEFT COLUMN: PROFILE & SOCIAL --- */
+        .col-left {
+            grid-row: 2 / 4;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .avatar-holo {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 2px solid var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.2), inset 0 0 20px rgba(0, 240, 255, 0.2);
+            margin: 0 auto 10px;
+            background: url('https://ui-avatars.com/api/?name=Lead&background=0D8ABC&color=fff&size=128') center/cover;
+            position: relative;
+        }
+
+        /* Scan line animation */
+        .avatar-holo::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent 40%, rgba(0, 240, 255, 0.5) 50%, transparent 60%);
+            border-radius: 50%;
+            animation: scan 3s linear infinite;
+        }
+
+        @keyframes scan {
+            0% {
+                top: -100%;
+            }
+
+            100% {
+                top: 100%;
+            }
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            padding: 4px 0;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+        }
+
+        .data-v {
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        /* Dense Social Feed */
+        .social-flow {
+            font-size: 0.75rem;
+            color: #aaa;
+        }
+
+        .s-card {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 8px;
+            margin-bottom: 8px;
+            border-left: 2px solid var(--neon-green);
+        }
+
+        .s-tag {
+            font-size: 0.6rem;
+            background: rgba(0, 255, 157, 0.1);
+            color: var(--neon-green);
+            padding: 2px 4px;
+            border-radius: 3px;
+            display: inline-block;
+            margin-top: 2px;
+        }
+
+        /* --- CENTER: VISUALIZATION --- */
+        .col-center {
+            grid-row: 2 / 3;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            position: relative;
+        }
+
+        /* 3D Gauge System */
+        .multi-gauge {
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .drift-ring {
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.05);
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .drift-ring-inner {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            border: 1px dashed var(--neon-blue);
+            position: absolute;
+            animation: rot 60s linear infinite;
+        }
+
+        @keyframes rot {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .center-score {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 30px var(--neon-blue);
+        }
+
+        .tiny-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+
+        /* Transcript Log */
+        .term-log {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid var(--glass-border);
+            padding: 10px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.85rem;
+            overflow-y: auto;
+            /* Hacker green text option, but sticking to neon blue theme */
+            color: var(--text-muted);
+        }
+
+        .ag-ln {
+            color: var(--neon-blue);
+            margin-top: 4px;
+        }
+
+        .cl-ln {
+            color: #fff;
+            margin-top: 4px;
+        }
+
+        /* --- RIGHT COLUMN: TACTICAL --- */
+        .col-right {
+            grid-row: 2 / 4;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .ammo-rack {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+        }
+
+        .shell {
+            height: 20px;
+            background: var(--neon-gold);
+            clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);
+            opacity: 1;
+            transition: opacity 0.3s;
+        }
+
+        .shell.mt {
+            background: #333;
+            opacity: 0.3;
+        }
+
+        .mini-map {
+            height: 100px;
+            background:
+                linear-gradient(90deg, transparent 49%, rgba(0, 240, 255, 0.2) 50%, transparent 51%),
+                linear-gradient(rgba(0, 240, 255, 0.2) 1px, transparent 1px);
+            background-size: 100% 100%, 20px 20px;
+            position: relative;
+            border: 1px solid rgba(0, 240, 255, 0.1);
+        }
+
+        .map-dot {
+            width: 10px;
+            height: 10px;
+            background: #fff;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 10%;
+            box-shadow: 0 0 10px #fff;
+            transition: left 1s;
+        }
+
+        .stage-lbl {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            font-size: 0.6rem;
+            color: var(--neon-blue);
+        }
+
+        /* --- BOTTOM DECK: PROVOCATION & DOMINANCE --- */
+        .bottom-deck {
+            grid-column: 2 / 3;
+            grid-row: 3;
+            display: flex;
+            gap: 15px;
+        }
+
+        .provocation-hub {
+            flex: 2;
+            background: linear-gradient(90deg, rgba(255, 0, 85, 0.1), transparent);
+            border: 1px solid var(--neon-pink);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .prov-msg {
+            font-size: 1.2rem;
+            color: #fff;
+            font-weight: 600;
+            text-shadow: 0 0 10px var(--neon-pink);
+        }
+
+        .dom-hub {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .dom-bars {
+            display: flex;
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .db-ag {
+            background: var(--neon-blue);
+            width: 50%;
+            transition: width 0.5s;
+        }
+
+        .db-cl {
+            background: var(--neon-pink);
+            width: 50%;
+            transition: width 0.5s;
+        }
+
+        /* Floating Mic Button */
+        .mic-fab {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--neon-blue);
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        .mic-fab:hover {
+            transform: scale(1.1);
+            background: var(--neon-blue);
+            color: #000;
+        }
+
+        .mic-fab.active {
+            background: var(--neon-pink);
+            border-color: var(--neon-pink);
+            color: #fff;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 0, 85, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 20px rgba(255, 0, 85, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 0, 85, 0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="particles"></div>
+
+    <div class="glass-chassis">
+
+        <!-- TOP: METRICS STRIP -->
+        <div class="top-deck">
+            <div style="text-align: right;">
+                <div style="font-size: 0.8rem; color: var(--text-muted);">SESSION TIME</div>
+                <div style="font-size: 1.5rem; font-family: 'Share Tech Mono';" id="timer">00:00</div>
+            </div>
+
+            <div class="conf-module">
+                <div class="conf-track-glass" id="confTrack">
+                    <!-- JS fills -->
+                </div>
+                <div class="conf-val" id="confLabel">78% PROBABILITY</div>
+            </div>
+
+            <div style="text-align: left;">
+                <div style="font-size: 0.8rem; color: var(--text-muted);">ENGAGEMENT</div>
+                <div style="font-size: 1.5rem; color: var(--neon-green);" id="healthVal">GOOD</div>
+            </div>
+        </div>
+
+        <!-- LEFT: INTEL CENTER -->
+        <div class="col-left">
+            <div class="g-panel" style="flex: 0 0 auto;">
+                <div class="g-head"><span>TARGET PROFILE</span> <span>[LIVE]</span></div>
+                <div class="avatar-holo"></div>
+
+                <div class="data-row"><span>NAME</span> <span class="data-v">Unknown</span></div>
+                <div class="data-row"><span>ROLE</span> <span class="data-v">Founder / CEO</span></div>
+                <div class="data-row"><span>MINDSET</span> <span class="data-v" id="mindsetVal"
+                        style="color:var(--neon-gold)">ANALYZING...</span></div>
+            </div>
+
+            <div class="g-panel" style="flex: 1;">
+                <div class="g-head"><span>SOCIAL INTELLIGENCE</span></div>
+                <div class="social-flow" id="socialFeed">
+                    <div class="s-card">
+                        <div>"Scaling AI infrastructure..."</div>
+                        <div class="s-tag">TECH FOCUS</div>
+                    </div>
+                    <div class="s-card">
+                        <div>"Looking for reliable partners."</div>
+                        <div class="s-tag">TRUST SIGNAL</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER: MAIN VIEW -->
+        <div class="col-center">
+
+            <div class="multi-gauge">
+                <div class="drift-ring"></div>
+                <div class="drift-ring-inner"></div>
+                <div style="text-align:center;">
+                    <div class="tiny-label">EMOTIONAL DRIFT</div>
+                    <div class="center-score" id="sentimentScore">NEU</div>
+                    <div class="tiny-label" style="color:var(--neon-blue); margin-top:5px;">STABLE</div>
+                </div>
+            </div>
+
+            <div class="g-panel term-log" id="terminal">
+                <div style="color:var(--neon-green)">>> SYSTEM ONLINE. AWAITING INPUT...</div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT: TACTICAL -->
+        <div class="col-right">
+            <div class="g-panel">
+                <div class="g-head"><span>TACTICAL AMMO</span></div>
+                <div class="ammo-rack" id="ammoRack"></div>
+                <div style="text-align:right; font-size:0.7rem; color:#aaa; margin-top:5px;">ROUNDS LEFT: <span
+                        id="ammoCount">25</span></div>
+            </div>
+
+            <div class="g-panel">
+                <div class="g-head"><span>SALES ORBIT</span></div>
+                <div class="mini-map">
+                    <div class="map-dot" id="mapDot"></div>
+                    <div class="stage-lbl" id="stageLbl">DISCOVERY PHASE</div>
+                </div>
+            </div>
+
+            <div class="g-panel">
+                <div class="g-head"><span>REAL-TIME COACH</span></div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: #fff; line-height: 1.3;" id="coachMain">MAINTAIN
+                    PACE</div>
+                <div style="font-size: 0.8rem; color: #aaa; margin-top: 5px;" id="coachSub">Listen for objections.</div>
+            </div>
+        </div>
+
+        <!-- BOTTOM: ACTION DECK -->
+        <div class="bottom-deck">
+            <div class="provocation-hub">
+                <div>
+                    <div style="font-size:0.7rem; color:var(--neon-pink); letter-spacing:2px; font-weight:bold;">
+                        PROVOCATION ENGINE</div>
+                    <div class="prov-msg" id="provocText">ASK: "WHAT HAPPENS IF YOU DO NOTHING?"</div>
+                </div>
+                <div style="font-size:3rem;">⚠️</div>
+            </div>
+
+            <div class="g-panel dom-hub">
+                <div class="tiny-label" style="text-align:left;">DOMINANCE SPLIT</div>
+                <div class="dom-bars">
+                    <div class="db-ag" id="barAg"></div>
+                    <div class="db-cl" id="barCl"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-top:4px;">
+                    <span style="color:var(--neon-blue)">YOU</span>
+                    <span style="color:var(--neon-pink)">LEAD</span>
+                </div>
+            </div>
+        </div>
+
+        <button class="mic-fab" id="micBtn" onclick="toggleMic()">🎙️</button>
+
+    </div>
+
+    <!-- LOGIC CORE -->
+    <script>
+        const API_URL = "http://localhost:47293/api/analyze/sales-call";
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let isListening = false;
+        let fullTranscript = "";
+        let sec = 0;
+        let timerInt;
+
+        let agentW = 0;
+        let clientW = 0;
+
+        // INIT UI
+        const confTrack = document.getElementById('confTrack');
+        for (let i = 0; i < 20; i++) {
+            let d = document.createElement('div');
+            d.className = 'seg';
+            if (i > 16) d.classList.add('risk');
+            confTrack.appendChild(d);
+        }
+
+        const ammoRack = document.getElementById('ammoRack');
+        for (let i = 0; i < 25; i++) {
+            let d = document.createElement('div');
+            d.className = 'shell';
+            ammoRack.appendChild(d);
+        }
+
+        function toggleMic() {
+            if (!SpeechRecognition) { alert("Chrome Required"); return; }
+
+            if (isListening) {
+                isListening = false;
+                recognition.stop();
+                clearInterval(timerInt);
+                document.getElementById('micBtn').classList.remove('active');
+            } else {
+                isListening = true;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.onresult = processSpeech;
+                recognition.onend = () => { if (isListening) recognition.start(); };
+                recognition.start();
+
+                document.getElementById('micBtn').classList.add('active');
+
+                timerInt = setInterval(() => {
+                    sec++;
+                    let m = Math.floor(sec / 60).toString().padStart(2, '0');
+                    let s = (sec % 60).toString().padStart(2, '0');
+                    document.getElementById('timer').innerText = `${m}:${s}`;
+                }, 1000);
+            }
+        }
+
+        function processSpeech(event) {
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    let text = event.results[i][0].transcript;
+                    fullTranscript += text + " ";
+
+                    // Log
+                    let d = document.createElement('div');
+                    // heuristic
+                    let isAg = text.length > 40;
+                    d.className = isAg ? 'ag-ln' : 'cl-ln';
+                    d.innerText = (isAg ? "> AGENT: " : "> LEAD: ") + text;
+                    let term = document.getElementById('terminal');
+                    term.appendChild(d);
+                    term.scrollTop = term.scrollHeight;
+
+                    // Stats
+                    let w = text.split(' ').length;
+                    if (isAg) agentW += w; else clientW += w;
+                    updateDom();
+
+                    callBrain();
+                }
+            }
+        }
+
+        function updateDom() {
+            let tot = agentW + clientW;
+            if (tot < 1) return;
+            let ap = (agentW / tot) * 100;
+            document.getElementById('barAg').style.width = ap + "%";
+            document.getElementById('barCl').style.width = (100 - ap) + "%";
+        }
+
+        async function callBrain() {
+            if (fullTranscript.length < 15) return;
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ transcript: fullTranscript })
+                });
+                const data = await res.json();
+                if (data.success) render(data);
+            } catch (e) { }
+        }
+
+        function render(data) {
+            // Confidence
+            if (data.confidence_score) {
+                let p = data.confidence_score;
+                document.getElementById('confLabel').innerText = p + "% PROBABILITY";
+                let slots = Math.floor((p / 100) * 20);
+                document.querySelectorAll('.seg').forEach((s, i) => {
+                    if (i < slots) s.classList.add('fill');
+                    else s.classList.remove('fill');
+                });
+
+                // Map position based on confidence
+                let leftPos = 10 + (p * 0.8);
+                document.getElementById('mapDot').style.left = leftPos + "%";
+                if (p > 80) document.getElementById('stageLbl').innerText = "CLOSING PHASE";
+                else if (p > 40) document.getElementById('stageLbl').innerText = "PITCHING PHASE";
+            }
+
+            // Mindset
+            if (data.pbd_mindset) document.getElementById('mindsetVal').innerText = data.pbd_mindset.toUpperCase();
+
+            // Sentiment
+            if (data.sentiment === 'positive') document.getElementById('sentimentScore').innerText = "POS";
+            else if (data.sentiment === 'negative') {
+                document.getElementById('sentimentScore').innerText = "NEG";
+                document.getElementById('sentimentScore').style.color = "var(--neon-pink)";
+            } else {
+                document.getElementById('sentimentScore').innerText = "NEU";
+                document.getElementById('sentimentScore').style.color = "#fff";
+            }
+
+            // Coach/Prov
+            if (data.coaching_tip) document.getElementById('coachMain').innerText = data.coaching_tip.toUpperCase();
+            if (data.smart_prompt) document.getElementById('provocText').innerText = data.smart_prompt.toUpperCase();
+
+            // Ammo
+            if (data.ammo_remaining) {
+                let r = Math.ceil((data.ammo_remaining / 100) * 25);
+                document.getElementById('ammoCount').innerText = r;
+                document.querySelectorAll('.shell').forEach((s, i) => {
+                    if (i >= r) s.classList.add('mt');
+                });
+            }
+        }
+
+    </script>
+
+</body>
+
+</html>

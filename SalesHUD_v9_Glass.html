@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD v9 - GLASS FUTURE</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;500;700&family=Orbitron:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #05080a;
+            --glass-bg: rgba(20, 30, 40, 0.4);
+            --glass-border: rgba(100, 200, 255, 0.3);
+            --cyan: #00f2ff;
+            --teal: #00b8ff;
+            --green: #00ff9d;
+            --red: #ff3366;
+            --orange: #ff9900;
+            --text-main: #e0faff;
+            --text-dim: #5c7a8a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(circle at 50% 50%, #111b24 0%, #000 100%);
+            color: var(--text-main);
+            font-family: 'Rajdhani', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1500px;
+            /* For 3D curve effect */
+        }
+
+        /* --- THE CURVED GLASS CONTAINER --- */
+        .glass-container {
+            width: 95vw;
+            height: 90vh;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            box-shadow:
+                0 0 40px rgba(0, 242, 255, 0.1),
+                inset 0 0 100px rgba(0, 0, 0, 0.8);
+            position: relative;
+            backdrop-filter: blur(10px);
+            display: grid;
+            grid-template-columns: 320px 1fr 320px;
+            grid-template-rows: 100px 1fr 120px;
+            padding: 30px;
+            gap: 20px;
+
+            /* Subtle curve */
+            transform: rotateX(2deg);
+        }
+
+        /* --- UI HELPERS --- */
+        .panel {
+            border: 1px solid rgba(100, 200, 255, 0.15);
+            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .panel-header {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 5px;
+        }
+
+        .glow-text {
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+        }
+
+        /* --- TOP BAR --- */
+        .top-bar {
+            grid-column: 1 / 4;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .clock {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.5rem;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .top-center-metrics {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        /* DOMINANCE DONUT */
+        .donut-chart {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: conic-gradient(var(--teal) 0% 50%, #333 50% 100%);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .donut-inner {
+            width: 30px;
+            height: 30px;
+            background: var(--bg-color);
+            border-radius: 50%;
+        }
+
+        /* CONFIDENCE BAR */
+        .conf-bar-wrap {
+            width: 300px;
+        }
+
+        .conf-label {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+        }
+
+        .conf-track {
+            height: 12px;
+            background: #111;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+
+        .conf-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--teal), var(--green));
+            width: 75%;
+            box-shadow: 0 0 15px var(--green);
+            transition: width 0.5s;
+        }
+
+        /* --- LEFT COLUMN --- */
+        .left-col {
+            grid-row: 2 / 3;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .bullet-list li {
+            list-style: none;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            color: #ccc;
+            padding-left: 10px;
+            border-left: 2px solid var(--text-dim);
+        }
+
+        .bullet-list li::before {
+            content: '';
+        }
+
+        /* --- CENTER COLUMN --- */
+        .center-col {
+            grid-row: 2 / 3;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        /* 3 Gauges Row */
+        .gauges-row {
+            display: flex;
+            gap: 30px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .gauge-wrap {
+            text-align: center;
+            width: 100px;
+        }
+
+        .gauge-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid #333;
+            margin: 0 auto 5px;
+            position: relative;
+            border-top-color: var(--teal);
+            /* dummy value */
+        }
+
+        .gauge-val {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            font-family: 'Orbitron';
+        }
+
+        /* Central Big Metric */
+        .nexus-metric {
+            width: 200px;
+            height: 200px;
+            border: 1px dashed var(--glass-border);
+            border-radius: 50%;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: radial-gradient(circle, rgba(0, 242, 255, 0.05) 0%, transparent 70%);
+        }
+
+        .nexus-web {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0.3;
+            animation: spin 60s linear infinite;
+        }
+
+        .nexus-score {
+            font-size: 3rem;
+            font-family: 'Orbitron';
+            color: var(--white);
+            z-index: 2;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* --- RIGHT COLUMN --- */
+        .right-col {
+            grid-row: 2 / 3;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+            margin-right: 5px;
+        }
+
+        .tag.green {
+            background: rgba(0, 255, 157, 0.1);
+            color: var(--green);
+            border: 1px solid var(--green);
+        }
+
+        .tag.red {
+            background: rgba(255, 51, 102, 0.1);
+            color: var(--red);
+            border: 1px solid var(--red);
+        }
+
+        /* --- BOTTOM BAR --- */
+        .bottom-bar {
+            grid-column: 1 / 4;
+            display: flex;
+            gap: 20px;
+        }
+
+        .suggestion-box {
+            flex: 2;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 40px;
+            padding: 20px 40px;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .icon-clock {
+            font-size: 2rem;
+            color: var(--text-dim);
+        }
+
+        .prompts {
+            flex: 1;
+        }
+
+        .prompt-main {
+            font-size: 1.1rem;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .prompt-sub {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .action-box {
+            flex: 1;
+            border: 1px solid var(--red);
+            border-radius: 20px;
+            background: rgba(255, 51, 102, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .act-lbl {
+            color: var(--red);
+            font-weight: bold;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+        }
+
+        .act-val {
+            color: #fff;
+            font-size: 1.2rem;
+        }
+
+        .control-panel {
+            position: absolute;
+            bottom: 10px;
+            right: 30px;
+            z-index: 100;
+        }
+
+        #micBtn {
+            background: transparent;
+            border: 1px solid var(--cyan);
+            color: var(--cyan);
+            padding: 8px 16px;
+            font-family: 'Rajdhani';
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        #micBtn.active {
+            background: var(--cyan);
+            color: #000;
+            box-shadow: 0 0 20px var(--cyan);
+        }
+
+        /* --- HIDDEN TRANSCRIPT FOR LOGIC --- */
+        #transcriptLog {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="glass-container">
+
+        <!-- ROW 1: TOP -->
+        <div class="top-bar">
+            <div class="clock" id="clock">00:00</div>
+
+            <div class="top-center-metrics">
+                <div style="text-align: right;">
+                    <div style="font-size:0.7rem; color: var(--text-dim)">DOMINANCE</div>
+                    <div style="font-size:0.9rem;">AGENT / CLIENT</div>
+                </div>
+                <div class="donut-chart" id="domChart">
+                    <div class="donut-inner"></div>
+                </div>
+
+                <div class="conf-bar-wrap">
+                    <div class="conf-label" style="display:flex; justify-content:space-between;">
+                        <span>CLOSE CONFIDENCE</span>
+                        <span id="confVal">75%</span>
+                    </div>
+                    <div class="conf-track">
+                        <div class="conf-fill" id="confBar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="font-size: 2rem; color: var(--cyan);">75%</div>
+        </div>
+
+        <!-- ROW 2: LEFT -->
+        <div class="left-col">
+            <div class="panel">
+                <div class="panel-header">LEAD PROFILE</div>
+                <ul class="bullet-list">
+                    <li><strong>BUSINESS:</strong> Tech Startup Founder</li>
+                    <li><strong>MOOD:</strong> Curious / Driven</li>
+                    <li><strong>INTERESTS:</strong> AI, Stanford MBA</li>
+                    <li><strong>MINDSET:</strong> <span id="pbdVal" style="color:var(--cyan)">Unknown</span></li>
+                </ul>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">AGENT TIE-INS</div>
+                <ul class="bullet-list">
+                    <li>Share "Project Nexus" Demo</li>
+                    <li>Mention: "Scalability"</li>
+                </ul>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">HISTORIC DATA</div>
+                <ul class="bullet-list">
+                    <li>Prev Call: Prod Demo</li>
+                    <li>Outcome: Positive</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ROW 2: CENTER -->
+        <div class="center-col">
+            <div class="panel-header" style="width: 100%; text-align: center;">EMOTION TELEMETRY</div>
+
+            <div class="gauges-row">
+                <div class="gauge-wrap">
+                    <div class="gauge-circle" style="border-color: var(--orange);" id="gInterest"></div>
+                    <div style="font-size:0.8rem; color:var(--orange)">INTEREST</div>
+                </div>
+                <div class="gauge-wrap">
+                    <div class="gauge-circle" style="border-color: var(--teal);" id="gTrust"></div>
+                    <div style="font-size:0.8rem; color:var(--teal)">TRUST</div>
+                </div>
+                <div class="gauge-wrap">
+                    <div class="gauge-circle" style="border-color: var(--red);" id="gStress"></div>
+                    <div style="font-size:0.8rem; color:var(--red)">STRESS</div>
+                </div>
+            </div>
+
+            <div class="nexus-metric">
+                <div class="nexus-web">
+                    <svg viewBox="0 0 100 100" fill="none" stroke="var(--cyan)" stroke-width="0.5">
+                        <circle cx="50" cy="50" r="20" />
+                        <circle cx="50" cy="50" r="35" />
+                        <circle cx="50" cy="50" r="48" />
+                        <line x1="50" y1="0" x2="50" y2="100" />
+                        <line x1="0" y1="50" x2="100" y2="50" />
+                        <line x1="15" y1="15" x2="85" y2="85" />
+                        <line x1="85" y1="15" x2="15" y2="85" />
+                    </svg>
+                </div>
+                <div class="nexus-score" id="engScore">92%</div>
+            </div>
+            <div style="font-size: 0.8rem; letter-spacing: 2px; color: var(--cyan);">ENGAGEMENT SCORE</div>
+
+            <div style="margin-top: 20px; font-size: 1.2rem; color: #fff;" id="latestTranscript">
+                "Listening for audio..."
+            </div>
+        </div>
+
+        <!-- ROW 2: RIGHT -->
+        <div class="right-col">
+            <div class="panel">
+                <div class="panel-header">LIKES (GREEN FLAGS)</div>
+                <div id="likesList">
+                    <div class="tag green">Speed</div>
+                    <div class="tag green">AI Integration</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">DISLIKES (RED FLAGS)</div>
+                <div id="dislikesList">
+                    <div class="tag red">High Cost</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">LIVE METRICS</div>
+                <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+                    <span style="font-size:0.8rem; color:#888;">SPEECH RATE</span>
+                    <span id="wpmVal">140 WPM</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span style="font-size:0.8rem; color:#888;">AMMO</span>
+                    <span id="ammoVal" style="color: var(--orange)">100%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROW 3: BOTTOM -->
+        <div class="bottom-bar">
+            <div class="suggestion-box">
+                <div class="icon-clock">🕒</div>
+                <div class="prompts">
+                    <div style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase;">Suggested Question
+                    </div>
+                    <div class="prompt-main" id="suggestQ">"How do you see this integrating?"</div>
+                    <div class="prompt-sub" id="suggestBenefit">Benefit: Imagine the time savings...</div>
+                </div>
+            </div>
+
+            <div class="action-box">
+                <div class="act-lbl">ACTION REQUIRED</div>
+                <div class="act-val" id="actionText">MAINTAIN FLOW</div>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <button id="micBtn" onclick="toggleMic()">START HUD</button>
+        </div>
+
+    </div>
+
+    <!-- LOGIC -->
+    <script>
+        const API_URL = "http://localhost:47293/api/analyze/sales-call";
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let isListening = false;
+        let fullTranscript = "";
+        let agentWords = 0;
+        let prospectWords = 0;
+
+        // Clock
+        setInterval(() => {
+            const now = new Date();
+            const h = now.getHours().toString().padStart(2, '0');
+            const m = now.getMinutes().toString().padStart(2, '0');
+            document.getElementById('clock').innerText = `${h}:${m}`;
+        }, 1000);
+
+        function toggleMic() {
+            if (!SpeechRecognition) { alert("Chrome Required"); return; }
+            const btn = document.getElementById('micBtn');
+
+            if (isListening) {
+                isListening = false;
+                recognition.stop();
+                btn.classList.remove('active');
+                btn.innerText = "START HUD";
+            } else {
+                isListening = true;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.onresult = processSpeech;
+                recognition.onend = () => { if (isListening) recognition.start(); };
+                recognition.start();
+                btn.classList.add('active');
+                btn.innerText = "LISTENING...";
+            }
+        }
+
+        function processSpeech(event) {
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    let text = event.results[i][0].transcript;
+                    fullTranscript += text + " ";
+
+                    // Display latest
+                    document.getElementById('latestTranscript').innerText = `"${text}"`;
+                    document.getElementById('latestTranscript').style.animation = "none";
+                    setTimeout(() => document.getElementById('latestTranscript').style.animation = "fadeIn 0.5s", 10);
+
+                    // Simple Stats
+                    let w = text.split(' ').length;
+                    if (text.length > 40) agentWords += w; else prospectWords += w;
+                    updateDominance();
+
+                    // API Call
+                    callBrain();
+                }
+            }
+        }
+
+        function updateDominance() {
+            let total = agentWords + prospectWords;
+            if (total < 1) return;
+            let agentPct = Math.floor((agentWords / total) * 100);
+            let color = agentPct > 60 ? '#ff3366' : '#00b8ff'; // Red if talking too much
+            document.getElementById('domChart').style.background = `conic-gradient(${color} 0% ${agentPct}%, #333 ${agentPct}% 100%)`;
+        }
+
+        async function callBrain() {
+            if (fullTranscript.length < 15) return;
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ transcript: fullTranscript })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    renderData(data);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function renderData(data) {
+            // Confidence
+            if (data.confidence_score) {
+                document.getElementById('confVal').innerText = data.confidence_score + "%";
+                document.getElementById('confBar').style.width = data.confidence_score + "%";
+            }
+
+            // Engagement (Center)
+            if (data.health_level) {
+                document.getElementById('engScore').innerText = data.health_level + "%";
+            }
+
+            // PBD Mindset
+            if (data.pbd_mindset) {
+                document.getElementById('pbdVal').innerText = data.pbd_mindset.toUpperCase();
+            }
+
+            // Coaching / Prompt
+            if (data.smart_prompt) {
+                document.getElementById('suggestQ').innerText = `"${data.smart_prompt}"`;
+            } else if (data.coaching_tip) {
+                document.getElementById('actionText').innerText = data.coaching_tip.toUpperCase();
+            }
+
+            // Ammo
+            if (data.ammo_remaining) {
+                document.getElementById('ammoVal').innerText = data.ammo_remaining + "%";
+            }
+
+            // Objections to Dislikes
+            if (data.detected_objections && data.detected_objections.length > 0) {
+                let html = data.detected_objections.map(o => `<div class="tag red">${o}</div>`).join('');
+                document.getElementById('dislikesList').innerHTML = html;
+            }
+        }
+
+    </script>
+</body>
+
+</html>
