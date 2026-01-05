@@ -114,3 +114,31 @@
 🐕 [Rapport Match - Shared Interest]
    Say: "I've got a Labrador too - Frankie. They're the best."
 ```
+
+---
+
+## X. DIAGNOSTIC PROBES (Subtext Elicitors)
+**Purpose**: Questions where the *answer doesn't matter* — it's HOW they respond that reveals their emotional state.
+
+| Probe Question | What It Reveals | Interpretation |
+|----------------|-----------------|----------------|
+| "Am I making sense so far?" | Engagement | Long pause = lost, Quick "yes" = following |
+| "How does that sound?" | Approval | Enthusiasm = good, Flat = objection brewing |
+| "Is this the kind of thing you were looking for?" | Interest | "Exactly!" = hot, "I guess" = cold |
+| "Are you still with me?" | Attention | Annoyance = lost them, "Yeah definitely" = engaged |
+| "Does that make sense?" | Confusion | "Kind of" = confused, "Absolutely" = clear |
+| "What do you think about that?" | Opinion | Silence = processing/negative, Quick response = engaged |
+| "You're a smart guy, you probably know this already" | Ego/Comfort | Agree = relaxed, Deflect = guarded |
+
+### How to Use:
+1. AI detects attention dropping or silence extending
+2. HUD suggests a **Diagnostic Probe**
+3. Agent asks the question
+4. AI analyzes the *tone and timing* of response
+5. Updates metrics (Attention, Interest, Hawkins Level)
+
+### HUD Display:
+```
+🔍 PROBE: "Am I making sense so far?"
+   └─ Listen for: speed, enthusiasm, hesitation
+```
