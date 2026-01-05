@@ -92,3 +92,25 @@
 | **Face on Screen** | Does seeing lead's face help agent perform? |
 | **AI Pretty Face** | Would a generated pleasant face help? |
 | **Blank Silhouette** | Or is no face better? |
+
+---
+
+## IX. REMI MODE (Training/Learning)
+| Feature | Description |
+|---------|-------------|
+| **Source Attribution** | Every prompt shows its source technique |
+| **Format** | "[Chase Hughes - Priming] Say: 'Most successful companies...'" |
+| **Use Case** | Reviewing recordings, learning what was applied where |
+| **Toggle** | Switch between Agent Mode (clean) and Remi Mode (annotated) |
+
+### Example Remi Mode Output:
+```
+💡 [Chase Hughes - Statements > Questions] 
+   Say: "Tell me about your budget timeline."
+
+⚠️ [Hawkins Level 150 - Anger Detected]
+   Action: "Validate their position. Don't argue."
+
+🐕 [Rapport Match - Shared Interest]
+   Say: "I've got a Labrador too - Frankie. They're the best."
+```
