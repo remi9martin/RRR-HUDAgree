@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD v23 - REMI VISION</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            --glass-clear: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --accent-green: #00ff99;
+            --accent-blue: #00ccff;
+            --accent-red: #ff3366;
+            --accent-amber: #ffaa00;
+            --text-white: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scrollbar-width: none;
+        }
+
+        ::-webkit-scrollbar {
+            width: 0;
+        }
+
+        body {
+            background: url('https://images.unsplash.com/photo-1543269664-56d93c1b41a6?q=80&w=2070&auto=format&fit=crop') center/cover no-repeat;
+            color: var(--text-white);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            z-index: 0;
+        }
+
+        .hud-frame {
+            position: relative;
+            z-index: 1;
+            width: 97vw;
+            height: 95vh;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            backdrop-filter: blur(18px);
+            box-shadow: 0 0 80px rgba(0, 0, 0, 0.4);
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            grid-template-rows: 70px 1fr 1fr 150px;
+            gap: 10px;
+            padding: 12px;
+        }
+
+        .corner {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .tl {
+            top: 10px;
+            left: 10px;
+            border-right: none;
+            border-bottom: none;
+            border-radius: 12px 0 0 0;
+        }
+
+        .tr {
+            top: 10px;
+            right: 10px;
+            border-left: none;
+            border-bottom: none;
+            border-radius: 0 12px 0 0;
+        }
+
+        .bl {
+            bottom: 10px;
+            left: 10px;
+            border-right: none;
+            border-top: none;
+            border-radius: 0 0 0 12px;
+        }
+
+        .br {
+            bottom: 10px;
+            right: 10px;
+            border-left: none;
+            border-top: none;
+            border-radius: 0 0 12px 0;
+        }
+
+        .mod {
+            background: var(--glass-clear);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .mh {
+            padding: 5px 10px;
+            font-size: 0.65rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .mb {
+            flex: 1;
+            padding: 8px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* === TOP BAR === */
+        .top-bar {
+            grid-column: 1/4;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .timer-cluster {
+            display: flex;
+            gap: 25px;
+        }
+
+        .tc-item {
+            text-align: center;
+        }
+
+        .tc-val {
+            font-family: 'JetBrains Mono';
+            font-size: 1.3rem;
+            color: #fff;
+        }
+
+        .tc-lbl {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .tc-val.warn {
+            color: var(--accent-amber);
+        }
+
+        .tc-val.danger {
+            color: var(--accent-red);
+        }
+
+        .conf-big {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-green);
+        }
+
+        /* === LEFT: LEAD INTEL === */
+        .left-col {
+            grid-row: 2/5;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .profile-card {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .prof-pic {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #333;
+            border: 2px solid var(--accent-blue);
+        }
+
+        .interest-tag {
+            background: rgba(0, 255, 153, 0.1);
+            border: 1px solid var(--accent-green);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            display: inline-block;
+        }
+
+        .history-item {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .qs-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+            font-size: 0.75rem;
+        }
+
+        .qs-dot {
+            color: var(--accent-green);
+        }
+
+        /* === CENTER TOP: TRANSCRIPT === */
+        .center-top {
+            grid-column: 2;
+            grid-row: 2;
+        }
+
+        .ghost-t {
+            font-family: 'JetBrains Mono';
+            font-size: 0.85rem;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.5);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 10px;
+            mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+        }
+
+        .gt-l {
+            margin-bottom: 8px;
+        }
+
+        .gt-l.hl {
+            color: #fff;
+            font-weight: 500;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+        }
+
+        .gt-l.fd {
+            opacity: 0.3;
+        }
+
+        /* === CENTER BOTTOM: SUGGESTED ACTIONS === */
+        .center-bot {
+            grid-column: 2;
+            grid-row: 3;
+        }
+
+        .action-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .act-card {
+            background: rgba(0, 204, 255, 0.1);
+            border: 1px solid var(--accent-blue);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .act-card:hover {
+            background: var(--accent-blue);
+            color: #000;
+        }
+
+        .act-card.cough {
+            border-color: var(--accent-amber);
+            background: rgba(255, 170, 0, 0.1);
+        }
+
+        .act-card.frankie {
+            border-color: var(--accent-green);
+            background: rgba(0, 255, 153, 0.1);
+        }
+
+        /* === RIGHT: AGENT RATING + EMOTION === */
+        .right-col {
+            grid-row: 2/5;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        /* EMOTION SPEEDOMETERS */
+        .speedo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .speedo-gauge {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            background: conic-gradient(var(--accent-green) 0% 0%, #222 0% 100%);
+            display: grid;
+            place-items: center;
+        }
+
+        .speedo-gauge::after {
+            content: '';
+            position: absolute;
+            inset: 6px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+        }
+
+        .sg-val {
+            position: absolute;
+            z-index: 2;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+
+        .speedo-lbl {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        /* AGENT RATING */
+        .rating-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .ri-bar {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .ri-fill {
+            height: 100%;
+            background: var(--accent-blue);
+            border-radius: 3px;
+        }
+
+        .ri-fill.bad {
+            background: var(--accent-red);
+        }
+
+        .ri-lbl {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            width: 80px;
+        }
+
+        .ri-val {
+            font-size: 0.7rem;
+            color: #fff;
+            width: 30px;
+            text-align: right;
+        }
+
+        /* ATTENTION ALERT */
+        .attn-alert {
+            background: rgba(255, 51, 102, 0.1);
+            border: 1px solid var(--accent-red);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            margin-top: auto;
+        }
+
+        .aa-pct {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-red);
+        }
+
+        .aa-lbl {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        /* === BOTTOM === */
+        .bottom-bar {
+            grid-column: 2;
+            grid-row: 4;
+            display: grid;
+            grid-template-columns: 1fr 100px 1fr;
+            gap: 10px;
+        }
+
+        .coach-strip {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .cs-main {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        .cs-lbl {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+
+        .mic-orb {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: transparent;
+            border: 2px solid #fff;
+            color: #fff;
+            font-size: 1.5rem;
+            display: grid;
+            place-items: center;
+            margin: auto;
+            cursor: pointer;
+        }
+
+        .mic-orb.on {
+            background: var(--accent-red);
+            border-color: var(--accent-red);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            50% {
+                transform: scale(1.05);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="hud-frame">
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+
+        <!-- TOP BAR: YOUR TIMERS -->
+        <div class="top-bar">
+            <div class="timer-cluster">
+                <div class="tc-item">
+                    <div class="tc-val" id="callTime">00:00</div>
+                    <div class="tc-lbl">Call Time</div>
+                </div>
+                <div class="tc-item">
+                    <div class="tc-val" id="silenceTime">0s</div>
+                    <div class="tc-lbl">Since Lead Spoke</div>
+                </div>
+                <div class="tc-item">
+                    <div class="tc-val" id="tangentTime">0s</div>
+                    <div class="tc-lbl">Your Tangent</div>
+                </div>
+                <div class="tc-item">
+                    <div class="tc-val">38%</div>
+                    <div class="tc-lbl">You Talking</div>
+                </div>
+            </div>
+            <div class="conf-big" id="confBig">--%</div>
+        </div>
+
+        <!-- LEFT: LEAD INTEL -->
+        <div class="left-col">
+            <div class="mod" style="flex:0 0 auto;">
+                <div class="mh"><span>LEAD PROFILE</span></div>
+                <div class="mb">
+                    <div class="profile-card">
+                        <div class="prof-pic"></div>
+                        <div>
+                            <div style="font-weight:700;">ANNA SINGH</div>
+                            <div style="font-size:0.7rem; color:var(--text-muted);">CTO @ TechCorp</div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:8px;">
+                        <span class="interest-tag">🐕 Dogs</span>
+                        <span class="interest-tag">🏍️ Motorcycles</span>
+                        <span class="interest-tag">🌱 Gardening</span>
+                    </div>
+                    <div style="font-size:0.75rem; color:var(--accent-amber); margin-bottom:5px;">⚠️ Family loss last
+                        year (no insurance)</div>
+                    <div style="font-size:0.7rem; color:var(--text-muted);">Personality: Cautious, detail-oriented</div>
+                </div>
+            </div>
+            <div class="mod" style="flex:1;">
+                <div class="mh"><span>QUESTIONS THEY ASKED</span> <span id="qCount">0</span></div>
+                <div class="mb" id="qBox">
+                    <div style="color:rgba(255,255,255,0.3);">None yet...</div>
+                </div>
+            </div>
+            <div class="mod" style="flex:1;">
+                <div class="mh"><span>HISTORY</span></div>
+                <div class="mb">
+                    <div class="history-item">Dec 12: Sent proposal, asked about integration</div>
+                    <div class="history-item">Nov 20: "I need budget approval first"</div>
+                    <div class="history-item">Oct 15: Initial discovery call - liked pricing</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER TOP: TRANSCRIPT -->
+        <div class="mod center-top">
+            <div class="mh"><span>LIVE TRANSCRIPT</span> <span style="color:#fff;">● REC</span></div>
+            <div class="ghost-t" id="gst">
+                <div class="gt-l fd">System ready...</div>
+            </div>
+        </div>
+
+        <!-- CENTER BOTTOM: SUGGESTED ACTIONS (YOUR IDEAS) -->
+        <div class="mod center-bot">
+            <div class="mh"><span>SUGGESTED ACTIONS</span></div>
+            <div class="mb action-cards">
+                <div class="act-card">"Am I boring you?"</div>
+                <div class="act-card">"Going too fast?"</div>
+                <div class="act-card">"You're a smart guy, you probably know this"</div>
+                <div class="act-card cough">Pretend cough → "Are you still there?"</div>
+                <div class="act-card frankie" id="frankieCard">🐕 "Bring up YOUR dog Frankie"</div>
+                <div class="act-card">"What do you think about...?"</div>
+            </div>
+        </div>
+
+        <!-- RIGHT: AGENT RATING + EMOTION -->
+        <div class="right-col">
+            <div class="mod" style="flex:0 0 auto;">
+                <div class="mh"><span>EMOTION SPEEDOMETERS</span></div>
+                <div class="mb" style="padding:10px;">
+                    <div class="speedo">
+                        <div class="speedo-gauge"
+                            style="background:conic-gradient(var(--accent-red) 0% 20%, #222 20% 100%);"><span
+                                class="sg-val">2</span></div>
+                        <div class="speedo-lbl">ANGER<br><small style="color:#fff;">Slightly leaning</small></div>
+                    </div>
+                    <div class="speedo">
+                        <div class="speedo-gauge"
+                            style="background:conic-gradient(var(--accent-green) 0% 75%, #222 75% 100%);"><span
+                                class="sg-val">7.5</span></div>
+                        <div class="speedo-lbl">INTEREST<br><small style="color:#fff;">Strong</small></div>
+                    </div>
+                    <div class="speedo">
+                        <div class="speedo-gauge"
+                            style="background:conic-gradient(var(--accent-blue) 0% 60%, #222 60% 100%);"><span
+                                class="sg-val">6</span></div>
+                        <div class="speedo-lbl">PATIENCE<br><small style="color:#fff;">Good</small></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mod" style="flex:1;">
+                <div class="mh"><span>AGENT RATING (YOU)</span></div>
+                <div class="mb">
+                    <div class="rating-item"><span class="ri-lbl">Following Script</span>
+                        <div class="ri-bar">
+                            <div class="ri-fill" style="width:80%;"></div>
+                        </div><span class="ri-val">80</span>
+                    </div>
+                    <div class="rating-item"><span class="ri-lbl">Delivery</span>
+                        <div class="ri-bar">
+                            <div class="ri-fill" style="width:70%;"></div>
+                        </div><span class="ri-val">70</span>
+                    </div>
+                    <div class="rating-item"><span class="ri-lbl">Repetition</span>
+                        <div class="ri-bar">
+                            <div class="ri-fill bad" style="width:30%;"></div>
+                        </div><span class="ri-val">30</span>
+                    </div>
+                    <div class="rating-item"><span class="ri-lbl">Circles</span>
+                        <div class="ri-bar">
+                            <div class="ri-fill bad" style="width:15%;"></div>
+                        </div><span class="ri-val">15</span>
+                    </div>
+                    <div style="margin-top:10px; font-size:0.75rem; color:var(--accent-amber);">💡 "Engage more - ask if
+                        they're following"</div>
+                </div>
+            </div>
+
+            <div class="attn-alert">
+                <div class="aa-pct" id="attnPct">70%</div>
+                <div class="aa-lbl">CHANCE NOT PAYING ATTENTION</div>
+                <div style="font-size:0.7rem; color:#fff; margin-top:5px;">Mention something startling!</div>
+            </div>
+        </div>
+
+        <!-- BOTTOM -->
+        <div class="bottom-bar">
+            <div class="mod coach-strip">
+                <div class="cs-main" id="coachText">Ask a retention question</div>
+                <div class="cs-lbl">AI COACH</div>
+            </div>
+            <div class="mic-orb" id="micBtn" onclick="toggleMic()">🎙️</div>
+            <div class="mod" style="display:grid; place-items:center;">
+                <div style="text-align:center;">
+                    <div style="font-size:0.7rem; color:var(--text-muted);">PBD LIFE POSITION</div>
+                    <div style="font-size:1.2rem; font-weight:700; color:var(--accent-blue);" id="pbdVal">SECURITY</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:47293/api/analyze/sales-call";
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition, isListening = false, fullTranscript = "";
+        let callSec = 0, silenceSec = 0, tangentSec = 0, leadLastSpoke = false, qCount = 0;
+
+        // TIMERS
+        setInterval(() => {
+            if (isListening) {
+                callSec++;
+                let m = Math.floor(callSec / 60).toString().padStart(2, '0');
+                let s = (callSec % 60).toString().padStart(2, '0');
+                document.getElementById('callTime').innerText = `${m}:${s}`;
+
+                silenceSec++;
+                let st = document.getElementById('silenceTime');
+                st.innerText = silenceSec + 's';
+                if (silenceSec > 20) st.classList.add('warn');
+                if (silenceSec > 40) st.classList.add('danger');
+
+                if (!leadLastSpoke) {
+                    tangentSec++;
+                    let tt = document.getElementById('tangentTime');
+                    tt.innerText = tangentSec + 's';
+                    if (tangentSec > 30) tt.classList.add('warn');
+                    if (tangentSec > 60) tt.classList.add('danger');
+                }
+            }
+        }, 1000);
+
+        function toggleMic() {
+            if (!SpeechRecognition) { alert("Chrome Required"); return; }
+            const btn = document.getElementById('micBtn');
+            if (isListening) { isListening = false; recognition.stop(); btn.classList.remove('on'); }
+            else {
+                isListening = true;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true; recognition.interimResults = true;
+                recognition.onresult = proc;
+                recognition.onend = () => { if (isListening) recognition.start(); };
+                recognition.start();
+                btn.classList.add('on');
+            }
+        }
+
+        async function proc(e) {
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+                if (e.results[i].isFinal) {
+                    let txt = e.results[i][0].transcript;
+                    fullTranscript += txt + " ";
+                    addGhost(txt);
+
+                    // Reset timers based on who's speaking (simplified heuristic)
+                    if (txt.includes('?')) { qCount++; document.getElementById('qCount').innerText = qCount; addQ(txt); }
+                    silenceSec = 0;
+                    document.getElementById('silenceTime').innerText = '0s';
+                    document.getElementById('silenceTime').className = 'tc-val';
+
+                    try {
+                        let r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transcript: fullTranscript }) });
+                        let d = await r.json();
+                        if (d.success) render(d);
+                    } catch (e) { }
+                }
+            }
+        }
+
+        function addGhost(txt) {
+            const gst = document.getElementById('gst');
+            Array.from(gst.children).forEach(c => { c.classList.remove('hl'); c.classList.add('fd'); });
+            let d = document.createElement('div'); d.className = 'gt-l hl'; d.innerText = txt;
+            gst.appendChild(d);
+            if (gst.children.length > 6) gst.removeChild(gst.firstChild);
+        }
+
+        function addQ(txt) {
+            let box = document.getElementById('qBox');
+            if (box.innerText.includes('None')) box.innerHTML = '';
+            let q = document.createElement('div');
+            q.className = 'qs-item';
+            q.innerHTML = `<span class="qs-dot">?</span> <span>${txt}</span>`;
+            box.appendChild(q);
+        }
+
+        function render(d) {
+            if (d.confidence_score) document.getElementById('confBig').innerText = d.confidence_score + "%";
+            if (d.attention_probability) document.getElementById('attnPct').innerText = (100 - d.attention_probability) + "%";
+            if (d.pbd_mindset) document.getElementById('pbdVal').innerText = d.pbd_mindset.toUpperCase();
+            if (d.coaching_tip) document.getElementById('coachText').innerText = d.coaching_tip.toUpperCase();
+        }
+    </script>
+</body>
+
+</html>

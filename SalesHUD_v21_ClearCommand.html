@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD v21 - CLEAR COMMAND</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            /* CLEARVIEW PALETTE - NO TEAL */
+            --glass-ultra: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --accent-white: #ffffff;
+            --accent-silver: #c0c8d4;
+            --accent-success: #00ff88;
+            /* Emerald for positive */
+            --accent-warn: #ffaa00;
+            /* Amber for warnings */
+            --accent-danger: #ff3366;
+            /* Rose for alerts */
+            --text-main: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scrollbar-width: none;
+        }
+
+        ::-webkit-scrollbar {
+            width: 0;
+        }
+
+        body {
+            /* Simulated Video Call Background - Blurred */
+            background: url('https://images.unsplash.com/photo-1543269664-56d93c1b41a6?q=80&w=2070&auto=format&fit=crop') center/cover no-repeat;
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Background Dim Overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            z-index: 0;
+        }
+
+        /* === THE ONE BIG RECTANGLE === */
+        .hud-frame {
+            position: relative;
+            z-index: 1;
+            width: 96vw;
+            height: 94vh;
+            background: var(--glass-ultra);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.3), inset 0 0 80px rgba(255, 255, 255, 0.02);
+
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            grid-template-rows: 70px 1fr 160px;
+            gap: 15px;
+            padding: 15px;
+        }
+
+        /* Inner Modules - Ultra Subtle */
+        .module {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .mod-head {
+            padding: 8px 12px;
+            font-size: 0.7rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .mod-body {
+            flex: 1;
+            padding: 12px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* === TOP BAR === */
+        .top-bar {
+            grid-column: 1 / 4;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .brand {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: 3px;
+            color: #fff;
+        }
+
+        /* Progress Map */
+        .progress-track {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex: 1;
+            max-width: 500px;
+            margin: 0 40px;
+        }
+
+        .pt-node {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: transparent;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: grid;
+            place-items: center;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.4);
+            transition: all 0.3s;
+        }
+
+        .pt-node.active {
+            border-color: #fff;
+            color: #fff;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .pt-node.done {
+            border-color: var(--accent-success);
+            color: var(--accent-success);
+        }
+
+        .pt-line {
+            flex: 1;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .clock {
+            font-family: 'JetBrains Mono';
+            font-size: 1.2rem;
+            color: #fff;
+        }
+
+        /* === LEFT WING === */
+        .left-wing {
+            grid-row: 2 / 4;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Rapport Card */
+        .rapport-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .ri-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-success);
+            border-radius: 50%;
+        }
+
+        /* Gauges */
+        .gauge-row {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px 0;
+        }
+
+        .mini-g {
+            text-align: center;
+        }
+
+        .mg-val {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .mg-lbl {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* === CENTER === */
+        .center-stage {
+            grid-row: 2 / 3;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Ghost Transcript */
+        .ghost-transcript {
+            flex: 1;
+            font-family: 'JetBrains Mono';
+            font-size: 0.9rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.5);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+        }
+
+        .gt-line {
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+
+        .gt-line.highlight {
+            color: #fff;
+            font-weight: 500;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            font-size: 1rem;
+        }
+
+        .gt-line.faded {
+            opacity: 0.3;
+            filter: blur(0.5px);
+        }
+
+        /* Rebuttal Popup */
+        .rebuttal-box {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 280px;
+            background: rgba(255, 170, 0, 0.1);
+            border: 1px solid var(--accent-warn);
+            border-radius: 10px;
+            padding: 15px;
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+
+        .rebuttal-box.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+
+        .rb-title {
+            color: var(--accent-warn);
+            font-weight: 700;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+        }
+
+        .rb-opt {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .rb-opt:hover {
+            background: rgba(255, 170, 0, 0.2);
+        }
+
+        /* === RIGHT WING === */
+        .right-wing {
+            grid-row: 2 / 4;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Bullet Echo */
+        .echo-bullet {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .eb-dot {
+            color: #fff;
+        }
+
+        /* Context Feed */
+        .feed-item {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* === BOTTOM TRAY === */
+        .bottom-tray {
+            grid-column: 2 / 3;
+            grid-row: 3;
+            display: grid;
+            grid-template-columns: 200px 1fr 180px;
+            gap: 15px;
+        }
+
+        /* Action List */
+        .action-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+            font-size: 0.85rem;
+        }
+
+        .ai-check {
+            width: 12px;
+            height: 12px;
+            border: 1px solid var(--accent-success);
+            border-radius: 3px;
+        }
+
+        /* Mic Button */
+        .mic-orb {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: transparent;
+            border: 2px solid #fff;
+            color: #fff;
+            font-size: 1.8rem;
+            display: grid;
+            place-items: center;
+            margin: auto;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+        }
+
+        .mic-orb:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .mic-orb.on {
+            background: var(--accent-danger);
+            border-color: var(--accent-danger);
+            box-shadow: 0 0 40px rgba(255, 51, 102, 0.4);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* Coach Panel */
+        .coach-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .cp-main {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .cp-sub {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="hud-frame">
+
+        <!-- TOP BAR -->
+        <div class="top-bar">
+            <div class="brand">CLEARCOMMAND</div>
+
+            <div class="progress-track">
+                <div class="pt-node done">D</div>
+                <div class="pt-line"></div>
+                <div class="pt-node active">P</div>
+                <div class="pt-line"></div>
+                <div class="pt-node">O</div>
+                <div class="pt-line"></div>
+                <div class="pt-node">C</div>
+            </div>
+
+            <div class="clock" id="clock">00:00</div>
+        </div>
+
+        <!-- LEFT WING -->
+        <div class="left-wing">
+            <div class="module" style="flex: 0 0 auto;">
+                <div class="mod-head"><span>BIOMETRICS</span></div>
+                <div class="mod-body gauge-row">
+                    <div class="mini-g">
+                        <div class="mg-val">85</div>
+                        <div class="mg-lbl">Mirror</div>
+                    </div>
+                    <div class="mini-g">
+                        <div class="mg-val">38%</div>
+                        <div class="mg-lbl">Talk Ratio</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="module" style="flex: 1;">
+                <div class="mod-head"><span>RAPPORT INTEL</span></div>
+                <div class="mod-body" id="rapportBox">
+                    <div class="rapport-item">
+                        <div class="ri-dot"></div> Identifying common ground...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER -->
+        <div class="center-stage">
+            <div class="module" style="flex: 1; position: relative;">
+                <div class="mod-head"><span>TRANSCRIPT</span> <span style="color:#fff;">● LIVE</span></div>
+                <div class="ghost-transcript" id="gst">
+                    <div class="gt-line faded">System ready...</div>
+                </div>
+
+                <div class="rebuttal-box" id="rebBox">
+                    <div class="rb-title">⚠️ OBJECTION DETECTED</div>
+                    <div id="rebOpts"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT WING -->
+        <div class="right-wing">
+            <div class="module" style="flex: 1;">
+                <div class="mod-head"><span>BULLET ECHO</span></div>
+                <div class="mod-body" id="echoBox">
+                    <div style="color:rgba(255,255,255,0.3);">Waiting for lead...</div>
+                </div>
+            </div>
+
+            <div class="module" style="flex: 1;">
+                <div class="mod-head"><span>CONTEXT</span></div>
+                <div class="mod-body">
+                    <div class="feed-item">LinkedIn: "Scaling AI..."</div>
+                    <div class="feed-item">Role: CTO (Decision Maker)</div>
+                    <div class="feed-item">Recent: Q1 Budget Review</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM TRAY -->
+        <div class="bottom-tray">
+            <div class="module">
+                <div class="mod-head"><span>ACTIONS</span></div>
+                <div class="mod-body" id="actList">
+                    <div style="color:rgba(255,255,255,0.3);">No commitments.</div>
+                </div>
+            </div>
+
+            <div class="mic-orb" id="micBtn" onclick="toggleMic()">🎙️</div>
+
+            <div class="module coach-panel">
+                <div class="cp-main" id="coachText">BUILD VALUE</div>
+                <div class="cp-sub">AI COACH</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:47293/api/analyze/sales-call";
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition, isListening = false, fullTranscript = "", sec = 0, tInt;
+
+        setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }), 1000);
+
+        function toggleMic() {
+            if (!SpeechRecognition) { alert("Chrome Required"); return; }
+            const btn = document.getElementById('micBtn');
+            if (isListening) {
+                isListening = false; recognition.stop(); clearInterval(tInt);
+                btn.classList.remove('on');
+            } else {
+                isListening = true;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true; recognition.interimResults = true;
+                recognition.onresult = proc;
+                recognition.onend = () => { if (isListening) recognition.start(); };
+                recognition.start();
+                btn.classList.add('on');
+                tInt = setInterval(() => { sec++; }, 1000);
+            }
+        }
+
+        async function proc(e) {
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+                if (e.results[i].isFinal) {
+                    let txt = e.results[i][0].transcript;
+                    fullTranscript += txt + " ";
+                    addGhostLine(txt);
+                    try {
+                        let r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transcript: fullTranscript }) });
+                        let d = await r.json();
+                        if (d.success) render(d);
+                    } catch (e) { }
+                }
+            }
+        }
+
+        function addGhostLine(txt) {
+            const gst = document.getElementById('gst');
+            Array.from(gst.children).forEach(c => { c.classList.remove('highlight'); c.classList.add('faded'); });
+            let d = document.createElement('div');
+            d.className = 'gt-line highlight'; d.innerText = txt;
+            gst.appendChild(d);
+            if (gst.children.length > 5) gst.removeChild(gst.firstChild);
+        }
+
+        function render(d) {
+            if (d.detected_objections && d.detected_objections.length > 0 && d.rebuttals) {
+                let box = document.getElementById('rebBox');
+                let opts = document.getElementById('rebOpts');
+                opts.innerHTML = "";
+                d.rebuttals.forEach(r => { let o = document.createElement('div'); o.className = 'rb-opt'; o.innerText = "► " + r; opts.appendChild(o); });
+                box.classList.add('active');
+                setTimeout(() => box.classList.remove('active'), 8000);
+            }
+            if (d.bullet_summary) {
+                let eb = document.getElementById('echoBox'); eb.innerHTML = "";
+                d.bullet_summary.forEach(b => { let r = document.createElement('div'); r.className = 'echo-bullet'; r.innerHTML = `<span class="eb-dot">●</span> <span>${b}</span>`; eb.appendChild(r); });
+            }
+            if (d.action_items) {
+                let al = document.getElementById('actList'); al.innerHTML = "";
+                d.action_items.forEach(a => { let r = document.createElement('div'); r.className = 'action-item'; r.innerHTML = `<div class="ai-check"></div> <span>${a}</span>`; al.appendChild(r); });
+            }
+            if (d.common_ground) {
+                let rl = document.getElementById('rapportBox'); rl.innerHTML = "";
+                d.common_ground.forEach(cg => { let i = document.createElement('div'); i.className = 'rapport-item'; i.innerHTML = `<div class="ri-dot"></div> ${cg}`; rl.appendChild(i); });
+            }
+            if (d.coaching_tip) document.getElementById('coachText').innerText = d.coaching_tip;
+        }
+    </script>
+</body>
+
+</html>

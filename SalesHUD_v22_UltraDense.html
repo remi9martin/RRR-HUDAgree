@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD v22 - ULTRA DENSE</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            /* V15 CLEARVIEW PALETTE */
+            --glass-clear: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --accent-green: #00ff99;
+            --accent-blue: #00ccff;
+            --accent-red: #ff3366;
+            --text-white: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scrollbar-width: none;
+        }
+
+        ::-webkit-scrollbar {
+            width: 0;
+        }
+
+        body {
+            background: url('https://images.unsplash.com/photo-1543269664-56d93c1b41a6?q=80&w=2070&auto=format&fit=crop') center/cover no-repeat;
+            color: var(--text-white);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            z-index: 0;
+        }
+
+        /* === ONE BIG RECTANGLE === */
+        .hud-frame {
+            position: relative;
+            z-index: 1;
+            width: 97vw;
+            height: 95vh;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            backdrop-filter: blur(18px);
+            box-shadow: 0 0 80px rgba(0, 0, 0, 0.4), inset 0 0 100px rgba(255, 255, 255, 0.02);
+
+            display: grid;
+            grid-template-columns: 280px 1fr 280px;
+            grid-template-rows: 60px 1fr 1fr 140px;
+            gap: 10px;
+            padding: 12px;
+        }
+
+        /* Corners */
+        .corner {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .tl {
+            top: 10px;
+            left: 10px;
+            border-right: none;
+            border-bottom: none;
+            border-radius: 12px 0 0 0;
+        }
+
+        .tr {
+            top: 10px;
+            right: 10px;
+            border-left: none;
+            border-bottom: none;
+            border-radius: 0 12px 0 0;
+        }
+
+        .bl {
+            bottom: 10px;
+            left: 10px;
+            border-right: none;
+            border-top: none;
+            border-radius: 0 0 0 12px;
+        }
+
+        .br {
+            bottom: 10px;
+            right: 10px;
+            border-left: none;
+            border-top: none;
+            border-radius: 0 0 12px 0;
+        }
+
+        /* Modules */
+        .mod {
+            background: var(--glass-clear);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .mh {
+            padding: 5px 10px;
+            font-size: 0.65rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .mb {
+            flex: 1;
+            padding: 8px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* === TOP === */
+        .top-bar {
+            grid-column: 1/4;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .clock {
+            font-family: 'JetBrains Mono';
+            font-size: 1.3rem;
+            color: #fff;
+        }
+
+        .prob-big {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent-green);
+        }
+
+        .progress-bar {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+            max-width: 400px;
+            margin: 0 30px;
+        }
+
+        .pb-node {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: grid;
+            place-items: center;
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .pb-node.on {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+            box-shadow: 0 0 10px rgba(0, 255, 153, 0.3);
+        }
+
+        .pb-node.done {
+            border-color: #fff;
+            color: #fff;
+        }
+
+        .pb-line {
+            flex: 1;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* === LEFT === */
+        .left-col {
+            grid-row: 2/5;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .gauge-mini {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .gm-bar {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .gm-fill {
+            height: 100%;
+            background: var(--accent-blue);
+            border-radius: 3px;
+        }
+
+        .gm-lbl {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            width: 70px;
+        }
+
+        .gm-val {
+            font-size: 0.7rem;
+            color: #fff;
+            width: 30px;
+            text-align: right;
+        }
+
+        .rapport-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 5px;
+            font-size: 0.75rem;
+        }
+
+        .ri-dot {
+            width: 5px;
+            height: 5px;
+            background: var(--accent-green);
+            border-radius: 50%;
+        }
+
+        .history-line {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            padding-left: 8px;
+            border-left: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* === CENTER === */
+        .center-top {
+            grid-column: 2;
+            grid-row: 2;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .center-bot {
+            grid-column: 2;
+            grid-row: 3;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ghost-t {
+            font-family: 'JetBrains Mono';
+            font-size: 0.85rem;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.5);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 10px;
+            mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+        }
+
+        .gt-l {
+            margin-bottom: 8px;
+        }
+
+        .gt-l.hl {
+            color: #fff;
+            font-weight: 500;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+            font-size: 0.9rem;
+        }
+
+        .gt-l.fd {
+            opacity: 0.3;
+        }
+
+        .eq-strip {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            height: 50px;
+        }
+
+        .eq-b {
+            width: 3px;
+            background: var(--accent-blue);
+            border-radius: 2px;
+            animation: wave 1s infinite ease-in-out;
+        }
+
+        @keyframes wave {
+
+            0%,
+            100% {
+                height: 15%;
+            }
+
+            50% {
+                height: 100%;
+            }
+        }
+
+        .rebuttal-pop {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 240px;
+            background: rgba(255, 102, 0, 0.1);
+            border: 1px solid #f80;
+            border-radius: 8px;
+            padding: 10px;
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+
+        .rebuttal-pop.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+
+        .rb-t {
+            color: #f80;
+            font-weight: 700;
+            font-size: 0.7rem;
+            margin-bottom: 6px;
+        }
+
+        .rb-o {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px;
+            margin-bottom: 3px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+
+        .rb-o:hover {
+            background: rgba(255, 102, 0, 0.2);
+        }
+
+        /* === RIGHT === */
+        .right-col {
+            grid-row: 2/5;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .bullet-item {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 5px;
+            font-size: 0.75rem;
+        }
+
+        .bi-dot {
+            color: var(--accent-blue);
+        }
+
+        .context-line {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .action-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+            font-size: 0.75rem;
+        }
+
+        .ai-chk {
+            width: 10px;
+            height: 10px;
+            border: 1px solid var(--accent-green);
+            border-radius: 2px;
+        }
+
+        .cheat-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .cheat-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .cheat-btn:hover {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        /* === BOTTOM === */
+        .bottom-bar {
+            grid-column: 2;
+            grid-row: 4;
+            display: grid;
+            grid-template-columns: 100px 1fr 100px;
+            gap: 10px;
+        }
+
+        .mic-orb {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: transparent;
+            border: 2px solid #fff;
+            color: #fff;
+            font-size: 1.5rem;
+            display: grid;
+            place-items: center;
+            margin: auto;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .mic-orb.on {
+            background: var(--accent-red);
+            border-color: var(--accent-red);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .coach-main {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .cm-txt {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        .cm-lbl {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="hud-frame">
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+
+        <!-- TOP -->
+        <div class="top-bar">
+            <div class="clock" id="clock">00:00:00</div>
+            <div class="progress-bar">
+                <div class="pb-node done">D</div>
+                <div class="pb-line"></div>
+                <div class="pb-node on">P</div>
+                <div class="pb-line"></div>
+                <div class="pb-node">O</div>
+                <div class="pb-line"></div>
+                <div class="pb-node">C</div>
+            </div>
+            <div class="prob-big" id="probBig">--%</div>
+        </div>
+
+        <!-- LEFT -->
+        <div class="left-col">
+            <div class="mod" style="flex:0 0 auto;">
+                <div class="mh"><span>BIOMETRICS</span></div>
+                <div class="mb">
+                    <div class="gauge-mini"><span class="gm-lbl">MIRROR</span>
+                        <div class="gm-bar">
+                            <div class="gm-fill" style="width:85%;"></div>
+                        </div><span class="gm-val">85</span>
+                    </div>
+                    <div class="gauge-mini"><span class="gm-lbl">TALK %</span>
+                        <div class="gm-bar">
+                            <div class="gm-fill" style="width:38%; background:var(--accent-green);"></div>
+                        </div><span class="gm-val">38</span>
+                    </div>
+                    <div class="gauge-mini"><span class="gm-lbl">PATIENCE</span>
+                        <div class="gm-bar">
+                            <div class="gm-fill" style="width:90%;"></div>
+                        </div><span class="gm-val">90</span>
+                    </div>
+                    <div class="gauge-mini"><span class="gm-lbl">INTERR</span>
+                        <div class="gm-bar">
+                            <div class="gm-fill" style="width:10%; background:var(--accent-red);"></div>
+                        </div><span class="gm-val">10</span>
+                    </div>
+                </div>
+            </div>
+            <div class="mod" style="flex:1;">
+                <div class="mh"><span>RAPPORT INTEL</span></div>
+                <div class="mb" id="rapportBox">
+                    <div class="rapport-item">
+                        <div class="ri-dot"></div> Shared interest: Dogs
+                    </div>
+                    <div class="rapport-item">
+                        <div class="ri-dot"></div> Both from Austin
+                    </div>
+                </div>
+            </div>
+            <div class="mod" style="flex:1;">
+                <div class="mh"><span>HISTORY</span></div>
+                <div class="mb">
+                    <div class="history-line">Dec 12: Sent Proposal</div>
+                    <div class="history-line">Nov 20: Asked about API limits</div>
+                    <div class="history-line">Oct 15: Initial Discovery</div>
+                </div>
+            </div>
+            <div class="mod" style="flex:0 0 auto;">
+                <div class="mh"><span>PBD MINDSET</span></div>
+                <div class="mb" style="display:grid; place-items:center; padding:10px;">
+                    <div style="font-size:1.2rem; font-weight:700; color:var(--accent-blue);" id="pbdVal">SECURITY</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER TOP -->
+        <div class="mod center-top">
+            <div class="mh"><span>TRANSCRIPT</span> <span style="color:#fff;">● LIVE</span></div>
+            <div class="ghost-t" id="gst">
+                <div class="gt-l fd">System ready...</div>
+            </div>
+            <div class="rebuttal-pop" id="rebBox">
+                <div class="rb-t">⚠️ OBJECTION</div>
+                <div id="rebOpts"></div>
+            </div>
+        </div>
+
+        <!-- CENTER BOTTOM -->
+        <div class="mod center-bot">
+            <div class="mh"><span>EQ CENTER</span></div>
+            <div class="mb eq-strip">
+                <div class="eq-b" style="animation-delay:0s"></div>
+                <div class="eq-b" style="animation-delay:0.1s"></div>
+                <div class="eq-b" style="animation-delay:0.2s"></div>
+                <div class="eq-b" style="animation-delay:0.3s"></div>
+                <div class="eq-b" style="animation-delay:0.4s"></div>
+                <div class="eq-b" style="animation-delay:0.5s"></div>
+                <div class="eq-b" style="animation-delay:0.4s"></div>
+                <div class="eq-b" style="animation-delay:0.3s"></div>
+                <div class="eq-b" style="animation-delay:0.2s"></div>
+                <div class="eq-b" style="animation-delay:0.1s"></div>
+            </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="right-col">
+            <div class="mod" style="flex:1;">
+                <div class="mh"><span>BULLET ECHO</span></div>
+                <div class="mb" id="echoBox">
+                    <div class="bullet-item"><span class="bi-dot">●</span> Waiting for lead...</div>
+                </div>
+            </div>
+            <div class="mod" style="flex:1;">
+                <div class="mh"><span>CONTEXT</span></div>
+                <div class="mb">
+                    <div class="context-line">LI: "Scaling AI infra..."</div>
+                    <div class="context-line">Role: CTO (Decision)</div>
+                    <div class="context-line">Company: TechCorp Inc</div>
+                    <div class="context-line">Budget: Q1 Review</div>
+                </div>
+            </div>
+            <div class="mod" style="flex:1;">
+                <div class="mh"><span>ACTIONS</span></div>
+                <div class="mb" id="actList">
+                    <div class="action-item">
+                        <div class="ai-chk"></div> Send PDF
+                    </div>
+                </div>
+            </div>
+            <div class="mod" style="flex:0 0 auto;">
+                <div class="mh"><span>CHEAT CODES</span></div>
+                <div class="mb cheat-row">
+                    <div class="cheat-btn">MIRROR</div>
+                    <div class="cheat-btn">SILENCE</div>
+                    <div class="cheat-btn">LABEL</div>
+                    <div class="cheat-btn">OPEN Q</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM -->
+        <div class="bottom-bar">
+            <div></div>
+            <div class="mod coach-main">
+                <div class="cm-txt" id="coachText">BUILD VALUE</div>
+                <div class="cm-lbl">AI COACH</div>
+            </div>
+            <div class="mic-orb" id="micBtn" onclick="toggleMic()">🎙️</div>
+        </div>
+
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:47293/api/analyze/sales-call";
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition, isListening = false, fullTranscript = "";
+
+        setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString(), 1000);
+
+        function toggleMic() {
+            if (!SpeechRecognition) { alert("Chrome Required"); return; }
+            const btn = document.getElementById('micBtn');
+            if (isListening) { isListening = false; recognition.stop(); btn.classList.remove('on'); }
+            else {
+                isListening = true;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true; recognition.interimResults = true;
+                recognition.onresult = proc;
+                recognition.onend = () => { if (isListening) recognition.start(); };
+                recognition.start();
+                btn.classList.add('on');
+            }
+        }
+
+        async function proc(e) {
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+                if (e.results[i].isFinal) {
+                    let txt = e.results[i][0].transcript;
+                    fullTranscript += txt + " ";
+                    addGhost(txt);
+                    try {
+                        let r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transcript: fullTranscript }) });
+                        let d = await r.json();
+                        if (d.success) render(d);
+                    } catch (e) { }
+                }
+            }
+        }
+
+        function addGhost(txt) {
+            const gst = document.getElementById('gst');
+            Array.from(gst.children).forEach(c => { c.classList.remove('hl'); c.classList.add('fd'); });
+            let d = document.createElement('div'); d.className = 'gt-l hl'; d.innerText = txt;
+            gst.appendChild(d);
+            if (gst.children.length > 5) gst.removeChild(gst.firstChild);
+        }
+
+        function render(d) {
+            if (d.confidence_score) document.getElementById('probBig').innerText = d.confidence_score + "%";
+            if (d.detected_objections && d.detected_objections.length > 0 && d.rebuttals) {
+                let box = document.getElementById('rebBox');
+                let opts = document.getElementById('rebOpts');
+                opts.innerHTML = "";
+                d.rebuttals.forEach(r => { let o = document.createElement('div'); o.className = 'rb-o'; o.innerText = "► " + r; opts.appendChild(o); });
+                box.classList.add('active');
+                setTimeout(() => box.classList.remove('active'), 8000);
+            }
+            if (d.bullet_summary) {
+                let eb = document.getElementById('echoBox'); eb.innerHTML = "";
+                d.bullet_summary.forEach(b => { let r = document.createElement('div'); r.className = 'bullet-item'; r.innerHTML = `<span class="bi-dot">●</span> <span>${b}</span>`; eb.appendChild(r); });
+            }
+            if (d.action_items) {
+                let al = document.getElementById('actList'); al.innerHTML = "";
+                d.action_items.forEach(a => { let r = document.createElement('div'); r.className = 'action-item'; r.innerHTML = `<div class="ai-chk"></div> <span>${a}</span>`; al.appendChild(r); });
+            }
+            if (d.common_ground) {
+                let rl = document.getElementById('rapportBox'); rl.innerHTML = "";
+                d.common_ground.forEach(cg => { let i = document.createElement('div'); i.className = 'rapport-item'; i.innerHTML = `<div class="ri-dot"></div> ${cg}`; rl.appendChild(i); });
+            }
+            if (d.pbd_mindset) document.getElementById('pbdVal').innerText = d.pbd_mindset.toUpperCase();
+            if (d.coaching_tip) document.getElementById('coachText').innerText = d.coaching_tip.toUpperCase();
+        }
+    </script>
+</body>
+
+</html>
