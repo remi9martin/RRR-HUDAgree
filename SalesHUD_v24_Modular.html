@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD v24 - MODULAR</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            --glass-clear: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --accent-green: #00ff99;
+            --accent-blue: #00ccff;
+            --accent-red: #ff3366;
+            --accent-amber: #ffaa00;
+            --text-white: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: url('https://images.unsplash.com/photo-1543269664-56d93c1b41a6?q=80&w=2070&auto=format&fit=crop') center/cover no-repeat;
+            color: var(--text-white);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            z-index: 0;
+        }
+
+        /* MODULAR CONTAINER */
+        .workspace {
+            position: relative;
+            z-index: 1;
+            width: 100vw;
+            height: 100vh;
+            padding: 15px;
+        }
+
+        /* DRAGGABLE MODULES */
+        .mod {
+            position: absolute;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            backdrop-filter: blur(15px);
+            min-width: 200px;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            transition: box-shadow 0.2s;
+        }
+
+        .mod:hover {
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+        }
+
+        .mod.dragging {
+            z-index: 1000;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .mod-head {
+            padding: 8px 12px;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: grab;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+
+        .mod-head:active {
+            cursor: grabbing;
+        }
+
+        .mod-body {
+            padding: 10px;
+            overflow: hidden;
+            transition: max-height 0.3s, padding 0.3s;
+        }
+
+        .mod.collapsed .mod-body {
+            max-height: 0;
+            padding: 0 10px;
+            overflow: hidden;
+        }
+
+        .collapse-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 2px 6px;
+        }
+
+        .collapse-btn:hover {
+            color: #fff;
+        }
+
+        /* SPECIFIC MODULES */
+        .timer-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .timer-item {
+            text-align: center;
+        }
+
+        .ti-val {
+            font-family: 'JetBrains Mono';
+            font-size: 1.2rem;
+            color: #fff;
+        }
+
+        .ti-val.warn {
+            color: var(--accent-amber);
+        }
+
+        .ti-val.danger {
+            color: var(--accent-red);
+        }
+
+        .ti-lbl {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .ghost-t {
+            font-family: 'JetBrains Mono';
+            font-size: 0.8rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.5);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .gt-l {
+            margin-bottom: 6px;
+        }
+
+        .gt-l.hl {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .gt-l.fd {
+            opacity: 0.3;
+        }
+
+        .action-btn {
+            display: block;
+            width: 100%;
+            background: rgba(0, 204, 255, 0.1);
+            border: 1px solid var(--accent-blue);
+            padding: 8px;
+            margin-bottom: 6px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: #fff;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .action-btn:hover {
+            background: var(--accent-blue);
+            color: #000;
+        }
+
+        .action-btn.cough {
+            border-color: var(--accent-amber);
+            background: rgba(255, 170, 0, 0.1);
+        }
+
+        .action-btn.frankie {
+            border-color: var(--accent-green);
+            background: rgba(0, 255, 153, 0.1);
+        }
+
+        .speedo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .speedo-gauge {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            background: conic-gradient(var(--accent-green) 0% 0%, #222 0% 100%);
+            display: grid;
+            place-items: center;
+            position: relative;
+        }
+
+        .speedo-gauge::after {
+            content: '';
+            position: absolute;
+            inset: 5px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 50%;
+        }
+
+        .sg-val {
+            position: absolute;
+            z-index: 2;
+            font-weight: 700;
+            font-size: 0.7rem;
+        }
+
+        .speedo-lbl {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .rating-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 5px;
+        }
+
+        .ri-lbl {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            width: 70px;
+        }
+
+        .ri-bar {
+            flex: 1;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .ri-fill {
+            height: 100%;
+            background: var(--accent-blue);
+            border-radius: 3px;
+        }
+
+        .ri-fill.bad {
+            background: var(--accent-red);
+        }
+
+        .interest-tag {
+            background: rgba(0, 255, 153, 0.1);
+            border: 1px solid var(--accent-green);
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.65rem;
+            margin-right: 4px;
+            margin-bottom: 4px;
+            display: inline-block;
+        }
+
+        /* POP-UP ALERTS */
+        .alert-popup {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 51, 102, 0.15);
+            border: 2px solid var(--accent-red);
+            border-radius: 12px;
+            padding: 15px 20px;
+            z-index: 2000;
+            backdrop-filter: blur(20px);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            max-width: 350px;
+        }
+
+        .alert-popup.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .ap-title {
+            color: var(--accent-red);
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .ap-body {
+            font-size: 0.85rem;
+        }
+
+        /* FLOATING MIC */
+        .mic-float {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #fff;
+            color: #fff;
+            font-size: 1.8rem;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            z-index: 1500;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .mic-float.on {
+            background: var(--accent-red);
+            border-color: var(--accent-red);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            50% {
+                transform: translateX(-50%) scale(1.05);
+            }
+        }
+
+        /* REMI MODE TOGGLE */
+        .remi-toggle {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--glass-border);
+            padding: 8px 15px;
+            border-radius: 20px;
+            z-index: 1500;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .remi-toggle.active {
+            border-color: var(--accent-amber);
+        }
+
+        .rt-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #444;
+        }
+
+        .remi-toggle.active .rt-dot {
+            background: var(--accent-amber);
+            box-shadow: 0 0 10px var(--accent-amber);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="workspace" id="workspace">
+
+        <!-- MODULE: TIMERS -->
+        <div class="mod" id="mod-timers" style="top:20px; left:20px; width:280px;">
+            <div class="mod-head" onmousedown="startDrag(event, 'mod-timers')">
+                <span>⏱️ TIMERS</span>
+                <button class="collapse-btn" onclick="toggleCollapse('mod-timers')">−</button>
+            </div>
+            <div class="mod-body timer-row">
+                <div class="timer-item">
+                    <div class="ti-val" id="callTime">00:00</div>
+                    <div class="ti-lbl">Call</div>
+                </div>
+                <div class="timer-item">
+                    <div class="ti-val" id="silenceTime">0s</div>
+                    <div class="ti-lbl">Silence</div>
+                </div>
+                <div class="timer-item">
+                    <div class="ti-val" id="tangentTime">0s</div>
+                    <div class="ti-lbl">Tangent</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODULE: TRANSCRIPT -->
+        <div class="mod" id="mod-transcript" style="top:20px; left:320px; width:400px;">
+            <div class="mod-head" onmousedown="startDrag(event, 'mod-transcript')">
+                <span>📝 TRANSCRIPT</span>
+                <button class="collapse-btn" onclick="toggleCollapse('mod-transcript')">−</button>
+            </div>
+            <div class="mod-body ghost-t" id="gst">
+                <div class="gt-l fd">System ready...</div>
+            </div>
+        </div>
+
+        <!-- MODULE: CONFIDENCE -->
+        <div class="mod" id="mod-confidence" style="top:20px; right:20px; width:150px;">
+            <div class="mod-head" onmousedown="startDrag(event, 'mod-confidence')">
+                <span>📊 CLOSE %</span>
+                <button class="collapse-btn" onclick="toggleCollapse('mod-confidence')">−</button>
+            </div>
+            <div class="mod-body" style="text-align:center;">
+                <div style="font-size:2.5rem; font-weight:700; color:var(--accent-green);" id="confBig">--%</div>
+            </div>
+        </div>
+
+        <!-- MODULE: ACTIONS -->
+        <div class="mod" id="mod-actions" style="top:150px; left:20px; width:280px;">
+            <div class="mod-head" onmousedown="startDrag(event, 'mod-actions')">
+                <span>💡 SUGGESTED ACTIONS</span>
+                <button class="collapse-btn" onclick="toggleCollapse('mod-actions')">−</button>
+            </div>
+            <div class="mod-body">
+                <button class="action-btn">"Am I boring you?"</button>
+                <button class="action-btn">"Going too fast?"</button>
+                <button class="action-btn cough">Pretend cough → "Still there?"</button>
+                <button class="action-btn frankie" id="frankieBtn">🐕 Bring up Frankie</button>
+            </div>
+        </div>
+
+        <!-- MODULE: EMOTIONS -->
+        <div class="mod" id="mod-emotions" style="top:150px; right:20px; width:220px;">
+            <div class="mod-head" onmousedown="startDrag(event, 'mod-emotions')">
+                <span>🎭 EMOTIONS</span>
+                <button class="collapse-btn" onclick="toggleCollapse('mod-emotions')">−</button>
+            </div>
+            <div class="mod-body">
+                <div class="speedo">
+                    <div class="speedo-gauge"
+                        style="background:conic-gradient(var(--accent-red) 0% 20%, #222 20% 100%);"><span
+                            class="sg-val">2</span></div><span class="speedo-lbl">Anger</span>
+                </div>
+                <div class="speedo">
+                    <div class="speedo-gauge"
+                        style="background:conic-gradient(var(--accent-green) 0% 75%, #222 75% 100%);"><span
+                            class="sg-val">7.5</span></div><span class="speedo-lbl">Interest</span>
+                </div>
+                <div class="speedo">
+                    <div class="speedo-gauge"
+                        style="background:conic-gradient(var(--accent-blue) 0% 60%, #222 60% 100%);"><span
+                            class="sg-val">6</span></div><span class="speedo-lbl">Patience</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODULE: AGENT RATING -->
+        <div class="mod" id="mod-agent" style="bottom:120px; right:20px; width:220px;">
+            <div class="mod-head" onmousedown="startDrag(event, 'mod-agent')">
+                <span>🎯 AGENT RATING</span>
+                <button class="collapse-btn" onclick="toggleCollapse('mod-agent')">−</button>
+            </div>
+            <div class="mod-body">
+                <div class="rating-item"><span class="ri-lbl">Script</span>
+                    <div class="ri-bar">
+                        <div class="ri-fill" style="width:80%;"></div>
+                    </div>
+                </div>
+                <div class="rating-item"><span class="ri-lbl">Delivery</span>
+                    <div class="ri-bar">
+                        <div class="ri-fill" style="width:70%;"></div>
+                    </div>
+                </div>
+                <div class="rating-item"><span class="ri-lbl">Repetition</span>
+                    <div class="ri-bar">
+                        <div class="ri-fill bad" style="width:30%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODULE: LEAD PROFILE -->
+        <div class="mod" id="mod-lead" style="bottom:120px; left:20px; width:280px;">
+            <div class="mod-head" onmousedown="startDrag(event, 'mod-lead')">
+                <span>👤 LEAD PROFILE</span>
+                <button class="collapse-btn" onclick="toggleCollapse('mod-lead')">−</button>
+            </div>
+            <div class="mod-body">
+                <div style="font-weight:700; margin-bottom:5px;">ANNA SINGH</div>
+                <div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:8px;">CTO @ TechCorp</div>
+                <div><span class="interest-tag">🐕 Dogs</span><span class="interest-tag">🏍️ Motorcycles</span></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- FLOATING MIC -->
+    <div class="mic-float" id="micBtn" onclick="toggleMic()">🎙️</div>
+
+    <!-- REMI MODE TOGGLE -->
+    <div class="remi-toggle" id="remiToggle" onclick="toggleRemiMode()">
+        <div class="rt-dot"></div>
+        <span>REMI MODE</span>
+    </div>
+
+    <!-- POP-UP ALERT -->
+    <div class="alert-popup" id="alertPop">
+        <div class="ap-title">⚠️ ATTENTION DROPPING</div>
+        <div class="ap-body">70% chance not paying attention. Try a retention question!</div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:47293/api/analyze/sales-call";
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition, isListening = false, fullTranscript = "";
+        let callSec = 0, silenceSec = 0, tangentSec = 0;
+        let remiMode = false;
+
+        // TIMERS
+        setInterval(() => {
+            if (isListening) {
+                callSec++;
+                document.getElementById('callTime').innerText = `${Math.floor(callSec / 60).toString().padStart(2, '0')}:${(callSec % 60).toString().padStart(2, '0')}`;
+                silenceSec++;
+                let st = document.getElementById('silenceTime');
+                st.innerText = silenceSec + 's';
+                st.className = 'ti-val' + (silenceSec > 20 ? ' warn' : '') + (silenceSec > 40 ? ' danger' : '');
+                tangentSec++;
+                let tt = document.getElementById('tangentTime');
+                tt.innerText = tangentSec + 's';
+                tt.className = 'ti-val' + (tangentSec > 30 ? ' warn' : '') + (tangentSec > 60 ? ' danger' : '');
+
+                // Pop-up alert when silence > 30s
+                if (silenceSec === 30) showAlert("⚠️ SILENCE ALERT", "Lead hasn't spoken in 30 seconds. Re-engage!");
+            }
+        }, 1000);
+
+        // DRAG & DROP
+        let dragEl = null, offsetX = 0, offsetY = 0;
+        function startDrag(e, id) {
+            dragEl = document.getElementById(id);
+            dragEl.classList.add('dragging');
+            offsetX = e.clientX - dragEl.offsetLeft;
+            offsetY = e.clientY - dragEl.offsetTop;
+            document.onmousemove = doDrag;
+            document.onmouseup = stopDrag;
+        }
+        function doDrag(e) {
+            if (dragEl) {
+                dragEl.style.left = (e.clientX - offsetX) + 'px';
+                dragEl.style.top = (e.clientY - offsetY) + 'px';
+                dragEl.style.right = 'auto';
+                dragEl.style.bottom = 'auto';
+            }
+        }
+        function stopDrag() { if (dragEl) dragEl.classList.remove('dragging'); dragEl = null; document.onmousemove = null; }
+
+        // COLLAPSE
+        function toggleCollapse(id) {
+            let mod = document.getElementById(id);
+            mod.classList.toggle('collapsed');
+            let btn = mod.querySelector('.collapse-btn');
+            btn.innerText = mod.classList.contains('collapsed') ? '+' : '−';
+        }
+
+        // REMI MODE
+        function toggleRemiMode() {
+            remiMode = !remiMode;
+            document.getElementById('remiToggle').classList.toggle('active', remiMode);
+        }
+
+        // ALERTS
+        function showAlert(title, body) {
+            let ap = document.getElementById('alertPop');
+            ap.querySelector('.ap-title').innerText = title;
+            ap.querySelector('.ap-body').innerText = body;
+            ap.classList.add('show');
+            setTimeout(() => ap.classList.remove('show'), 5000);
+        }
+
+        // MIC
+        function toggleMic() {
+            if (!SpeechRecognition) { alert("Chrome Required"); return; }
+            const btn = document.getElementById('micBtn');
+            if (isListening) { isListening = false; recognition.stop(); btn.classList.remove('on'); }
+            else {
+                isListening = true;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true; recognition.interimResults = true;
+                recognition.onresult = proc;
+                recognition.onend = () => { if (isListening) recognition.start(); };
+                recognition.start();
+                btn.classList.add('on');
+            }
+        }
+
+        async function proc(e) {
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+                if (e.results[i].isFinal) {
+                    let txt = e.results[i][0].transcript;
+                    fullTranscript += txt + " ";
+                    addGhost(txt);
+                    silenceSec = 0; tangentSec = 0;
+                    try {
+                        let r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transcript: fullTranscript }) });
+                        let d = await r.json();
+                        if (d.success) render(d);
+                    } catch (e) { }
+                }
+            }
+        }
+
+        function addGhost(txt) {
+            const gst = document.getElementById('gst');
+            Array.from(gst.children).forEach(c => { c.classList.remove('hl'); c.classList.add('fd'); });
+            let d = document.createElement('div'); d.className = 'gt-l hl'; d.innerText = txt;
+            gst.appendChild(d);
+            if (gst.children.length > 6) gst.removeChild(gst.firstChild);
+            gst.scrollTop = gst.scrollHeight;
+        }
+
+        function render(d) {
+            if (d.confidence_score) document.getElementById('confBig').innerText = d.confidence_score + "%";
+            if (d.attention_probability && d.attention_probability < 50) {
+                showAlert("⚠️ ATTENTION DROPPING", (100 - d.attention_probability) + "% chance not paying attention!");
+            }
+            if (d.coaching_tip) {
+                // In Remi Mode, show source
+                if (remiMode) {
+                    showAlert("💡 [Chase Hughes - Coaching]", d.coaching_tip);
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
