@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales HUD v25 - EAGLE VISION</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            --glass-clear: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --accent-gold: #D4AF37;
+            --accent-green: #00ff99;
+            --accent-blue: #00ccff;
+            --accent-red: #ff3366;
+            --accent-amber: #ffaa00;
+            --text-white: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: url('assets/eagle_bg.png') center/cover no-repeat fixed, #111;
+            color: var(--text-white);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(4px);
+            z-index: 0;
+        }
+
+        .workspace {
+            position: relative;
+            z-index: 1;
+            width: 100vw;
+            height: 100vh;
+            padding: 12px;
+        }
+
+        /* MODULES */
+        .mod {
+            position: absolute;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            backdrop-filter: blur(12px);
+            min-width: 160px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .mod.dragging {
+            z-index: 1000;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+        }
+
+        .mod-head {
+            padding: 5px 8px;
+            font-size: 0.6rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+            cursor: grab;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mod-head:active {
+            cursor: grabbing;
+        }
+
+        .mod-body {
+            padding: 6px;
+            overflow: hidden;
+            transition: max-height 0.3s, padding 0.3s;
+        }
+
+        .mod.collapsed .mod-body {
+            max-height: 0;
+            padding: 0 6px;
+            overflow: hidden;
+        }
+
+        .collapse-btn {
+            background: none;
+            border: none;
+            color: var(--accent-gold);
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        /* TIMER STYLES */
+        .timer-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .timer-item {
+            text-align: center;
+        }
+
+        .ti-val {
+            font-family: 'JetBrains Mono';
+            font-size: 1rem;
+            color: #fff;
+        }
+
+        .ti-val.warn {
+            color: var(--accent-amber);
+        }
+
+        .ti-val.danger {
+            color: var(--accent-red);
+        }
+
+        .ti-lbl {
+            font-size: 0.5rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* TRANSCRIPT */
+        .ghost-t {
+            font-family: 'JetBrains Mono';
+            font-size: 0.7rem;
+            line-height: 1.4;
+            color: rgba(255, 255, 255, 0.5);
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .gt-l {
+            margin-bottom: 4px;
+        }
+
+        .gt-l.hl {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .gt-l.fd {
+            opacity: 0.3;
+        }
+
+        /* ACTIONS */
+        .action-btn {
+            display: block;
+            width: 100%;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid var(--accent-gold);
+            padding: 5px;
+            margin-bottom: 3px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            color: #fff;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .action-btn:hover {
+            background: var(--accent-gold);
+            color: #000;
+        }
+
+        .action-btn.chase {
+            border-color: var(--accent-blue);
+            background: rgba(0, 204, 255, 0.1);
+        }
+
+        /* SPEEDOS */
+        .speedo {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+
+        .speedo-gauge {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: conic-gradient(var(--accent-green) 0% 0%, #222 0% 100%);
+            display: grid;
+            place-items: center;
+            position: relative;
+        }
+
+        .speedo-gauge::after {
+            content: '';
+            position: absolute;
+            inset: 3px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 50%;
+        }
+
+        .sg-val {
+            position: absolute;
+            z-index: 2;
+            font-weight: 700;
+            font-size: 0.55rem;
+        }
+
+        .speedo-lbl {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+        }
+
+        /* RATINGS */
+        .rating-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 3px;
+        }
+
+        .ri-lbl {
+            font-size: 0.55rem;
+            color: var(--text-muted);
+            width: 55px;
+        }
+
+        .ri-bar {
+            flex: 1;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .ri-fill {
+            height: 100%;
+            background: var(--accent-gold);
+            border-radius: 2px;
+        }
+
+        .ri-fill.bad {
+            background: var(--accent-red);
+        }
+
+        /* TAGS */
+        .interest-tag {
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid var(--accent-gold);
+            padding: 2px 5px;
+            border-radius: 6px;
+            font-size: 0.55rem;
+            margin-right: 2px;
+            margin-bottom: 2px;
+            display: inline-block;
+        }
+
+        /* HAWKINS BAR */
+        .hawkins-bar {
+            height: 6px;
+            background: linear-gradient(to right, #ff3366 0%, #ffaa00 33%, #00ff99 66%, #00ccff 100%);
+            border-radius: 3px;
+            position: relative;
+            margin: 8px 0;
+        }
+
+        .hb-marker {
+            position: absolute;
+            top: -2px;
+            width: 3px;
+            height: 10px;
+            background: #fff;
+            border-radius: 1px;
+            transform: translateX(-50%);
+        }
+
+        /* ALERT */
+        .alert-popup {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(255, 51, 102, 0.15);
+            border: 2px solid var(--accent-red);
+            border-radius: 10px;
+            padding: 10px 14px;
+            z-index: 2000;
+            backdrop-filter: blur(16px);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            max-width: 280px;
+        }
+
+        .alert-popup.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .ap-title {
+            color: var(--accent-red);
+            font-weight: 700;
+            font-size: 0.75rem;
+            margin-bottom: 3px;
+        }
+
+        .ap-body {
+            font-size: 0.7rem;
+        }
+
+        /* MIC */
+        .mic-float {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid var(--accent-gold);
+            color: var(--accent-gold);
+            font-size: 1.3rem;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            z-index: 1500;
+        }
+
+        .mic-float.on {
+            background: var(--accent-red);
+            border-color: var(--accent-red);
+            color: #fff;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            50% {
+                transform: translateX(-50%) scale(1.05);
+            }
+        }
+
+        /* REMI MODE */
+        .remi-toggle {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--accent-gold);
+            padding: 5px 10px;
+            border-radius: 16px;
+            z-index: 1500;
+            font-size: 0.65rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .remi-toggle.active {
+            background: rgba(212, 175, 55, 0.2);
+        }
+
+        .rt-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #444;
+        }
+
+        .remi-toggle.active .rt-dot {
+            background: var(--accent-gold);
+            box-shadow: 0 0 6px var(--accent-gold);
+        }
+
+        /* BRANDING */
+        .eagle-brand {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            text-shadow: 0 0 16px rgba(212, 175, 55, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 1500;
+        }
+
+        .eagle-brand span {
+            font-size: 0.5rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        /* AUDIO UPLOAD */
+        .audio-upload {
+            position: fixed;
+            bottom: 20px;
+            right: 80px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid var(--glass-border);
+            padding: 6px 10px;
+            border-radius: 16px;
+            z-index: 1500;
+            font-size: 0.6rem;
+            cursor: pointer;
+        }
+
+        .audio-upload input {
+            display: none;
+        }
+
+        /* API STATUS */
+        .api-status {
+            position: fixed;
+            bottom: 20px;
+            left: 80px;
+            font-size: 0.55rem;
+            color: var(--text-muted);
+            z-index: 1500;
+        }
+
+        .api-status.ok {
+            color: var(--accent-green);
+        }
+
+        .api-status.err {
+            color: var(--accent-red);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="eagle-brand">🦅 EAGLE VISION <span>v25</span></div>
+
+    <div class="workspace" id="workspace">
+
+        <!-- TIMERS -->
+        <div class="mod" id="mod-timers" style="top:50px; left:10px; width:220px;">
+            <div class="mod-head" onmousedown="startDrag(event, 'mod-timers')">⏱️ TIMERS <button class="collapse-btn"
+                    onclick="toggleCollapse('mod-timers')">−</button></div>
+            <div class="mod-body timer-row">
+                <div class="timer-item">
+                    <div class="ti-val" id="callTime">00:00</div>
+                    <div class="ti-lbl">Call</div>
+                </div>
+                <div class="timer-item">
+                    <div class="ti-val" id="silenceTime">0s</div>
+                    <div class="ti-lbl">Silence</div>
+                </div>
+                <div class="timer-item">
+                    <div class="ti-val" id="tangentTime">0s</div>
+                    <div class="ti-lbl">Tangent</div>
+                </div>
+                <div class="timer-item">
+                    <div class="ti-val" id="domVal">50%</div>
+                    <div class="ti-lbl">You</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TRANSCRIPT -->
+        <div class="mod" id="mod-transcript" style="top:50px; left:245px; width:320px;">
+            <div class="mod-head" onmousedown="startDrag(event, 'mod-transcript')">📝 TRANSCRIPT <button
+                    class="collapse-btn" onclick="toggleCollapse('mod-transcript')">−</button></div>
+            <div class="mod-body ghost-t" id="gst">
+                <div class="gt-l fd">Ready...</div>
+            </div>
+        </div>
+
+        <!-- CLOSE % -->
+        <div class="mod" id="mod-confidence" style="top:50px; right:10px; width:110px;">
+            <div class="mod-head" onmousedown="startDrag(event, 'mod-confidence')">📊 CLOSE <button class="collapse-btn"
+                    onclick="toggleCollapse('mod-confidence')">−</button></div>
+            <div class="mod-body" style="text-align:center;">
+                <div style="font-size:2rem; font-weight:700; color:var(--accent-gold);" id="confBig">--%</div>
+            </div>
+        </div>
+
+        <!-- HAWKINS -->
+        <div class="mod" id="mod-hawkins" style="top:140px; right:10px; width:160px;">
+            <div class="mod-head" onmousedown="startDrag(event, 'mod-hawkins')">🧠 HAWKINS <button class="collapse-btn"
+                    onclick="toggleCollapse('mod-hawkins')">−</button></div>
+            <div class="mod-body">
+                <div style="text-align:center; font-size:1.3rem; font-weight:700;" id="hawkinsVal">250</div>
+                <div style="text-align:center; font-size:0.6rem; color:var(--text-muted);" id="hawkinsZone">NEUTRALITY
+                </div>
+                <div class="hawkins-bar">
+                    <div class="hb-marker" id="hbMarker" style="left:42%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHASE PROMPTS -->
+        <div class="mod" id="mod-chase" style="top:260px; right:10px; width:180px;">
+            <div class="mod-head" onmousedown="startDrag(event, 'mod-chase')">🎯 CHASE HUGHES <button
+                    class="collapse-btn" onclick="toggleCollapse('mod-chase')">−</button></div>
+            <div class="mod-body">
+                <button class="action-btn chase" id="chasePrompt1">"You seem like someone who..."</button>
+                <button class="action-btn chase" id="chasePrompt2">"Tell me about your timeline."</button>
+                <button class="action-btn chase" id="chasePrompt3">"I had a client just like you..."</button>
+            </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="mod" id="mod-actions" style="top:155px; left:10px; width:220px;">
+            <div class="mod-head" onmousedown="startDrag(event, 'mod-actions')">💡 ACTIONS <button class="collapse-btn"
+                    onclick="toggleCollapse('mod-actions')">−</button></div>
+            <div class="mod-body">
+                <button class="action-btn" id="smartPrompt">Loading...</button>
+                <button class="action-btn">🐕 Bring up Frankie</button>
+                <button class="action-btn">"Am I boring you?"</button>
+            </div>
+        </div>
+
+        <!-- EMOTIONS -->
+        <div class="mod" id="mod-emotions" style="top:285px; left:10px; width:160px;">
+            <div class="mod-head" onmousedown="startDrag(event, 'mod-emotions')">🎭 EMOTIONS <button
+                    class="collapse-btn" onclick="toggleCollapse('mod-emotions')">−</button></div>
+            <div class="mod-body">
+                <div class="speedo">
+                    <div class="speedo-gauge" id="angerGauge"
+                        style="background:conic-gradient(var(--accent-red) 0% 20%, #222 20% 100%);"><span class="sg-val"
+                            id="angerVal">2</span></div><span class="speedo-lbl">Anger</span>
+                </div>
+                <div class="speedo">
+                    <div class="speedo-gauge" id="interestGauge"
+                        style="background:conic-gradient(var(--accent-green) 0% 75%, #222 75% 100%);"><span
+                            class="sg-val" id="interestVal">7</span></div><span class="speedo-lbl">Interest</span>
+                </div>
+                <div class="speedo">
+                    <div class="speedo-gauge" id="patienceGauge"
+                        style="background:conic-gradient(var(--accent-blue) 0% 60%, #222 60% 100%);"><span
+                            class="sg-val" id="patienceVal">6</span></div><span class="speedo-lbl">Patience</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- AGENT -->
+        <div class="mod" id="mod-agent" style="bottom:90px; right:10px; width:160px;">
+            <div class="mod-head" onmousedown="startDrag(event, 'mod-agent')">🎯 AGENT <button class="collapse-btn"
+                    onclick="toggleCollapse('mod-agent')">−</button></div>
+            <div class="mod-body">
+                <div class="rating-item"><span class="ri-lbl">Script</span>
+                    <div class="ri-bar">
+                        <div class="ri-fill" id="scriptBar" style="width:80%;"></div>
+                    </div>
+                </div>
+                <div class="rating-item"><span class="ri-lbl">Delivery</span>
+                    <div class="ri-bar">
+                        <div class="ri-fill" id="deliveryBar" style="width:70%;"></div>
+                    </div>
+                </div>
+                <div class="rating-item"><span class="ri-lbl">Circles</span>
+                    <div class="ri-bar">
+                        <div class="ri-fill bad" id="circlesBar" style="width:20%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEAD -->
+        <div class="mod" id="mod-lead" style="bottom:90px; left:10px; width:200px;">
+            <div class="mod-head" onmousedown="startDrag(event, 'mod-lead')">👤 LEAD <button class="collapse-btn"
+                    onclick="toggleCollapse('mod-lead')">−</button></div>
+            <div class="mod-body">
+                <div style="font-weight:700; font-size:0.85rem;" id="leadName">NEW LEAD</div>
+                <div style="font-size:0.6rem; color:var(--text-muted); margin-bottom:5px;" id="leadTitle">-</div>
+                <div id="leadTags"><span class="interest-tag">📞 First Call</span></div>
+            </div>
+        </div>
+
+        <!-- PBD -->
+        <div class="mod" id="mod-pbd" style="bottom:90px; left:220px; width:120px;">
+            <div class="mod-head" onmousedown="startDrag(event, 'mod-pbd')">🎖️ PBD <button class="collapse-btn"
+                    onclick="toggleCollapse('mod-pbd')">−</button></div>
+            <div class="mod-body" style="text-align:center;">
+                <div style="font-size:1rem; font-weight:700; color:var(--accent-gold);" id="pbdVal">SECURITY</div>
+            </div>
+        </div>
+
+        <!-- COACHING -->
+        <div class="mod" id="mod-coaching" style="top:420px; left:10px; width:220px;">
+            <div class="mod-head" onmousedown="startDrag(event, 'mod-coaching')">🤖 AI COACH <button
+                    class="collapse-btn" onclick="toggleCollapse('mod-coaching')">−</button></div>
+            <div class="mod-body" style="font-size:0.7rem;" id="coachTip">Waiting for conversation...</div>
+        </div>
+
+    </div>
+
+    <!-- MIC -->
+    <div class="mic-float" id="micBtn" onclick="toggleMic()">🎙️</div>
+
+    <!-- AUDIO UPLOAD -->
+    <label class="audio-upload">📁 Upload Audio<input type="file" id="audioFile" accept="audio/*"
+            onchange="handleAudio(event)"></label>
+
+    <!-- REMI MODE -->
+    <div class="remi-toggle" id="remiToggle" onclick="toggleRemiMode()">
+        <div class="rt-dot"></div><span>REMI</span>
+    </div>
+
+    <!-- API STATUS -->
+    <div class="api-status" id="apiStatus">API: Checking...</div>
+
+    <!-- ALERT -->
+    <div class="alert-popup" id="alertPop">
+        <div class="ap-title">⚠️ ALERT</div>
+        <div class="ap-body">Message</div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:47293/api/analyze/sales-call";
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition, isListening = false, fullTranscript = "";
+        let callSec = 0, silenceSec = 0, tangentSec = 0;
+        let remiMode = false;
+
+        // Check API on load
+        fetch(API_URL.replace('/analyze/sales-call', '/health')).then(r => {
+            document.getElementById('apiStatus').innerText = '🟢 API: Connected';
+            document.getElementById('apiStatus').className = 'api-status ok';
+        }).catch(e => {
+            document.getElementById('apiStatus').innerText = '🔴 API: Offline';
+            document.getElementById('apiStatus').className = 'api-status err';
+        });
+
+        // TIMERS
+        setInterval(() => {
+            if (isListening) {
+                callSec++;
+                document.getElementById('callTime').innerText = `${Math.floor(callSec / 60).toString().padStart(2, '0')}:${(callSec % 60).toString().padStart(2, '0')}`;
+                silenceSec++;
+                let st = document.getElementById('silenceTime');
+                st.innerText = silenceSec + 's';
+                st.className = 'ti-val' + (silenceSec > 15 ? ' warn' : '') + (silenceSec > 30 ? ' danger' : '');
+                tangentSec++;
+                if (silenceSec === 25) showAlert("⚠️ SILENCE", "Lead quiet for 25s!");
+            }
+        }, 1000);
+
+        // DRAG
+        let dragEl = null, offsetX = 0, offsetY = 0;
+        function startDrag(e, id) {
+            dragEl = document.getElementById(id);
+            dragEl.classList.add('dragging');
+            offsetX = e.clientX - dragEl.offsetLeft;
+            offsetY = e.clientY - dragEl.offsetTop;
+            document.onmousemove = doDrag;
+            document.onmouseup = stopDrag;
+        }
+        function doDrag(e) { if (dragEl) { dragEl.style.left = (e.clientX - offsetX) + 'px'; dragEl.style.top = (e.clientY - offsetY) + 'px'; dragEl.style.right = 'auto'; dragEl.style.bottom = 'auto'; } }
+        function stopDrag() { if (dragEl) dragEl.classList.remove('dragging'); dragEl = null; document.onmousemove = null; }
+
+        function toggleCollapse(id) { let m = document.getElementById(id); m.classList.toggle('collapsed'); m.querySelector('.collapse-btn').innerText = m.classList.contains('collapsed') ? '+' : '−'; }
+        function toggleRemiMode() { remiMode = !remiMode; document.getElementById('remiToggle').classList.toggle('active', remiMode); }
+
+        function showAlert(title, body) {
+            let ap = document.getElementById('alertPop');
+            ap.querySelector('.ap-title').innerText = title;
+            ap.querySelector('.ap-body').innerText = body;
+            ap.classList.add('show');
+            setTimeout(() => ap.classList.remove('show'), 4000);
+        }
+
+        function toggleMic() {
+            if (!SpeechRecognition) { alert("Chrome Required"); return; }
+            const btn = document.getElementById('micBtn');
+            if (isListening) { isListening = false; recognition.stop(); btn.classList.remove('on'); }
+            else {
+                isListening = true; callSec = 0; silenceSec = 0; tangentSec = 0; fullTranscript = "";
+                recognition = new SpeechRecognition();
+                recognition.continuous = true; recognition.interimResults = true;
+                recognition.onresult = proc;
+                recognition.onend = () => { if (isListening) recognition.start(); };
+                recognition.start();
+                btn.classList.add('on');
+            }
+        }
+
+        function handleAudio(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            showAlert("📁 AUDIO", "Loaded: " + file.name);
+            // In real implementation, would transcribe audio file
+        }
+
+        async function proc(e) {
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+                if (e.results[i].isFinal) {
+                    let txt = e.results[i][0].transcript;
+                    fullTranscript += txt + " ";
+                    addGhost(txt);
+                    silenceSec = 0; tangentSec = 0;
+                    await callAPI();
+                }
+            }
+        }
+
+        function addGhost(txt) {
+            const gst = document.getElementById('gst');
+            Array.from(gst.children).forEach(c => { c.classList.remove('hl'); c.classList.add('fd'); });
+            let d = document.createElement('div'); d.className = 'gt-l hl'; d.innerText = txt;
+            gst.appendChild(d);
+            if (gst.children.length > 5) gst.removeChild(gst.firstChild);
+            gst.scrollTop = gst.scrollHeight;
+        }
+
+        async function callAPI() {
+            try {
+                let r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transcript: fullTranscript }) });
+                let d = await r.json();
+                if (d.success) render(d);
+            } catch (e) { console.error(e); }
+        }
+
+        function render(d) {
+            if (d.confidence_score) document.getElementById('confBig').innerText = d.confidence_score + "%";
+            if (d.hawkins_level) {
+                document.getElementById('hawkinsVal').innerText = d.hawkins_level;
+                document.getElementById('hbMarker').style.left = Math.min(100, (d.hawkins_level / 600) * 100) + '%';
+            }
+            if (d.hawkins_zone) document.getElementById('hawkinsZone').innerText = d.hawkins_zone.toUpperCase();
+            if (d.pbd_mindset) document.getElementById('pbdVal').innerText = d.pbd_mindset.toUpperCase();
+            if (d.dominance_split) document.getElementById('domVal').innerText = d.dominance_split.agent + '%';
+            if (d.attention_probability && d.attention_probability < 50) showAlert("⚠️ ATTENTION", (100 - d.attention_probability) + "% not paying attention!");
+            if (d.coaching_tip) {
+                let tip = d.coaching_tip;
+                if (remiMode && d.technique_source) tip = `[${d.technique_source}] ${tip}`;
+                document.getElementById('coachTip').innerText = tip;
+            }
+            if (d.smart_prompt) document.getElementById('smartPrompt').innerText = d.smart_prompt;
+            if (d.health_level) {
+                document.getElementById('interestVal').innerText = Math.round(d.health_level / 10);
+                document.getElementById('interestGauge').style.background = `conic-gradient(var(--accent-green) 0% ${d.health_level}%, #222 ${d.health_level}% 100%)`;
+            }
+        }
+    </script>
+</body>
+
+</html>
