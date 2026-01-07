@@ -743,9 +743,19 @@
                 document.getElementById('coachTip').innerText = tip;
             }
             if (d.smart_prompt) document.getElementById('smartPrompt').innerText = d.smart_prompt;
-            if (d.health_level) {
-                document.getElementById('interestVal').innerText = Math.round(d.health_level / 10);
-                document.getElementById('interestGauge').style.background = `conic-gradient(var(--accent-green) 0% ${d.health_level}%, #222 ${d.health_level}% 100%)`;
+
+            // Map 0-10 emotion levels to percentage for gauge background
+            if (d.anger_level !== undefined) {
+                document.getElementById('angerVal').innerText = d.anger_level;
+                document.getElementById('angerGauge').style.background = `conic-gradient(var(--accent-red) 0% ${d.anger_level * 10}%, #222 ${d.anger_level * 10}% 100%)`;
+            }
+            if (d.interest_level !== undefined) {
+                document.getElementById('interestVal').innerText = d.interest_level;
+                document.getElementById('interestGauge').style.background = `conic-gradient(var(--accent-green) 0% ${d.interest_level * 10}%, #222 ${d.interest_level * 10}% 100%)`;
+            }
+            if (d.patience_level !== undefined) {
+                document.getElementById('patienceVal').innerText = d.patience_level;
+                document.getElementById('patienceGauge').style.background = `conic-gradient(var(--accent-blue) 0% ${d.patience_level * 10}%, #222 ${d.patience_level * 10}% 100%)`;
             }
         }
     </script>
